@@ -38,8 +38,7 @@ PR마다 CI가 `./gradlew build`(테스트 포함)를 실행합니다. CI는 MyS
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | GET | `/api/questions` | 등기부 질문 10개 | P0 | 문한일 | `question` |
 | 2 | POST | `/api/diagnoses` | 규칙 기반 점수·등급 + 위험 항목 안내 | P0 | 송석주, 최다인 | `diagnosis`, `diagnosis.advice` |
-| 3 | GET | `/api/diagnoses/{id}` | 진단 다시 보기 | P2 | 송석주 | `diagnosis` |
-| 4 | GET | `/api/schedule` | 계약 일정표 14개 | P0 | 문한일 | `schedule` |
+| 4 | GET | `/api/schedule` | 계약 일정표 16개 | P0 | 문한일 | `schedule` |
 | 5 | POST | `/api/ocr/registry` | 주소 + 서류로 질문별 확인 여부·답 (multipart) | P1 | 최다인 | `ocr` |
 
 공통 에러, 예외 처리, CORS는 `common` 패키지(문한일)에 둡니다.

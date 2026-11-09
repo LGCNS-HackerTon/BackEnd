@@ -10,7 +10,7 @@
 
 | 항목 | 내용 |
 | --- | --- |
-| 범위 | API 5개 = P0 3개(질문 조회, 진단, 일정표) + P1 1개(등기부 OCR) + P2 1개(진단 다시 보기) |
+| 범위 | API 4개 = P0 3개(질문 조회, 진단, 일정표) + P1 1개(등기부 OCR). 3번(진단 다시 보기)은 삭제 (D11). 회원 API는 6장 |
 | 호출 주소 | `http://localhost:8080/api/...` (FE는 `VITE_API_BASE_URL`로 지정) |
 | 형식 | JSON, UTF-8. **OCR(5번)만 요청이 `multipart/form-data`** |
 | 인증 | 질문·비로그인 진단·일정표는 인증 없이 호출한다. 회원 API는 **JWT Bearer 인증**을 사용한다 |
@@ -45,7 +45,7 @@
 | code | HTTP | 상황 | field |
 | --- | --- | --- | --- |
 | `INVALID_INPUT` | 400 | 입력값이 규칙에 안 맞음, JSON 형식 오류, 없는 enum 값, 날짜 형식 오류 | 문제 필드 이름 (없으면 `null`) |
-| `NOT_FOUND` | 404 | 없는 진단 id | `null` |
+| `NOT_FOUND` | 404 | 없는 경로 | `null` |
 | `OCR_UNREADABLE` | 422 | 사진에서 등기부 글자를 읽지 못함, OCR 엔진 실패·시간 초과 | `null` |
 | `INTERNAL_ERROR` | 500 | 처리 못 한 서버 오류. 내부 메시지는 숨긴다 | `null` |
 
@@ -55,7 +55,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | 진단 | 질문 목록 조회 | GET | `/api/questions` | P0 | 문한일 | DG-02 |
 | 2 | 진단 | 진단하기 | POST | `/api/diagnoses` | P0 | 송석주, 최다인 | DG-07~11, RS-01~07 |
-| 3 | 진단 | 진단 결과 다시 보기 | GET | `/api/diagnoses/{id}` | P2 | 송석주 | RS-09 |
+| 3 | ~~진단~~ | ~~진단 결과 다시 보기~~ | - | ~~`/api/diagnoses/{id}`~~ | **삭제 (D11)** | - | - |
 | 4 | 일정표 | 계약 일정표 | GET | `/api/schedule` | P0 | 문한일 | SC-01~05 |
 | 5 | 진단 | 등기부 OCR (서류로 답 채우기) | POST | `/api/ocr/registry` | P1 | 최다인 | DG-13~15 |
 
@@ -266,31 +266,9 @@
 
 ---
 
-### 3. [진단] 진단 결과 다시 보기 (P2)
+### 3. ~~[진단] 진단 결과 다시 보기~~ (삭제, D11)
 
-`GET /api/diagnoses/{id}` · 인증 없음 · **P2 (오늘 범위 밖)** · 담당 송석주 · RS-09
-
-| 항목 | 내용 |
-| --- | --- |
-| 기능 | 저장된 진단을 다시 조회한다 (공유 링크용) |
-| 계산 | 저장된 `diagnosis_answers.score`, `diagnoses.debt_ratio`로 `factors`를 다시 만든다 |
-
-#### Path Variable
-
-| 이름 | 타입 | 설명 |
-| --- | --- | --- |
-| `id` | long | 진단 id |
-
-#### Response Body — HTTP 200
-
-2번 응답(HTTP 201)과 **똑같은 모양**
-
-#### 에러
-
-| code | HTTP | 상황 |
-| --- | --- | --- |
-| `NOT_FOUND` | 404 | 없는 id |
-| `INVALID_INPUT` | 400 | id가 숫자가 아님 |
+`GET /api/diagnoses/{id}`는 **만들지 않는다.** 공유 기능을 하지 않고, 인증 없이 id만 알면 남의 진단을 볼 수 있는 구조라 위험하다. 로그인 회원의 기록 조회는 6장 회원 API가 맡는다. 번호는 다른 문서의 "5번 API" 참조가 바뀌지 않게 비워 둔다.
 
 ---
 
@@ -300,7 +278,7 @@
 
 | 항목 | 내용 |
 | --- | --- |
-| 기능 | 계약 날짜로 D-day 할 일 14개의 날짜·남은 날·상태를 계산한다. **저장하지 않는다** |
+| 기능 | 계약 날짜로 D-day 할 일 16개의 날짜·남은 날·상태를 계산한다. **저장하지 않는다** |
 | 계산 규칙 | docs/02 (기준일 + `offsetDays`) |
 | 데이터 | `checklist_items` 읽기 |
 | 화면 | S4 일정표 · "일정표 만들기" |
@@ -328,8 +306,8 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 | --- | --- | --- |
 | `today` | date | 서버 기준 오늘 |
 | `expiryDate` | date | 만기일 = 입주일 + `termMonths` |
-| `items` | array | 할 일 14개. `date` 오름차순, 같으면 `order` 오름차순 |
-| `items[].order` | int | docs/02 순서 번호 (1~14) |
+| `items` | array | 할 일 16개. `date` 오름차순, 같으면 `order` 오름차순 |
+| `items[].order` | int | docs/02 순서 번호 (1~16) |
 | `items[].anchor` | string | `CONTRACT` / `BALANCE` / `MOVE_IN` / `EXPIRY` |
 | `items[].date` | date | 기준일 + `offsetDays` |
 | `items[].daysLeft` | int | `date - today` (일). 음수면 지난 일 |
@@ -388,9 +366,8 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 | --- | --- |
 | 기능 | 주소와 서류(등기부등본, 건축물대장)로 **질문 10개 각각의 확인 여부와 답**, 채권최고액 합계를 돌려준다. 점수는 계산하지 않는다 (점수는 2번 API만) |
 | 흐름 | docs/06 S2: 주소 → 첨부 → **이 API** → 미확인 질문만 보완 → 금액 → 2번 API |
-| 엔진 | BE2가 정한다 (docs/09 5절 후보, decision-log D9). 엔진이 바뀌어도 이 응답 모양은 같다 |
 | 개인정보 | 서류·주소는 **저장하지 않는다** (메모리 처리 후 폐기). 응답·로그에 소유자 이름을 남기지 않는다. 단 `A1_OWNER` 비교용 소유자 이름은 `evidence`로 화면에만 보여준다 (NFR-06) |
-| 엔진 | **Naver CLOVA OCR**. 서류는 OCR 처리에만 전송하고 서버에 저장하지 않는다 |
+| 엔진 | **Naver CLOVA OCR** (D9, docs/09 6절). 서류는 OCR 처리에만 전송하고 서버에 저장하지 않는다. 엔진이 바뀌어도 이 응답 모양은 같다 |
 | 시간 | 엔진 호출 타임아웃 10초. 넘으면 422 `OCR_UNREADABLE` |
 
 #### Request — `multipart/form-data`
@@ -399,7 +376,7 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 | --- | --- | --- | --- |
 | `address` | string | ✅ | 계약할 집 주소 + 동·호수 (예: `서울 마포구 ○○로 12, 101동 1204호`). 서류와 같은 집인지 비교하는 데만 쓴다 |
 | `registry` | file | ✅ | 등기부등본 1개. JPG · PNG · PDF, 10MB 이하. **"말소사항 미포함"** 발급본 권장 |
-| `buildingLedger` | file | | 건축물대장 1개 (같은 형식·크기). 없으면 `R1_VIOLATION`은 미확인 |
+| `buildingLedger` | file | ✅ | 건축물대장 1개 (같은 형식·크기). 계약할 호수가 나오는 것 (정부24 무료) |
 
 #### Response Body — HTTP 200
 
@@ -412,6 +389,7 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 | `answers[].answer` | string \| null | `CONFIRMED`면 `YES`/`NO`, `UNCONFIRMED`면 `null`. **판독 실패를 `NO`로 채우지 않는다** |
 | `answers[].evidence` | string \| null | 근거 문장 (화면에 보여줌). 예: `"을구 1번 근저당권설정 채권최고액 금36,000,000원"` |
 | `mortgageMax` | int \| null | 유효한 근저당 채권최고액 합계 (만원). 근저당이 `CONFIRMED YES`인데 금액을 못 읽으면 `null` → FE는 **금액만** 입력받는다 |
+| `housingType` | string \| null | 건축물대장의 주택 종류: `APARTMENT` · `MULTIPLEX`(다세대·연립) · `MULTI_HOUSEHOLD`(다가구) · `DETACHED`(단독) · `OFFICETEL` · `NON_RESIDENTIAL`(근린생활시설 등) · 못 읽으면 `null`. FE는 `MULTI_HOUSEHOLD`·`DETACHED`일 때 **선순위 보증금 확인 안내**를 띄운다 (RS-11) |
 | `warnings` | string[] | 예: `"을구 일부를 읽지 못했어요. 해당 질문은 직접 답해 주세요."` |
 
 질문별로 확인하는 근거는 docs/01 1.1절을 따른다. `A1_OWNER`는 계약 상대방과 비교할 근거가 서버에 없으므로 보통 `UNCONFIRMED`로 돌려주고, `evidence`에 등기부상 소유자 이름을 보여준다.
@@ -429,21 +407,22 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
     { "code": "B1_MORTGAGE", "status": "CONFIRMED", "answer": "YES", "evidence": "을구 1번 근저당권설정 채권최고액 금36,000,000원" },
     { "code": "B2_LEASE_REG", "status": "CONFIRMED", "answer": "NO", "evidence": "을구에 유효한 주택임차권 기록 없음" },
     { "code": "B3_JEONSE_RIGHT", "status": "UNCONFIRMED", "answer": null, "evidence": "을구 2번 일부를 읽지 못함" },
-    { "code": "R1_VIOLATION", "status": "UNCONFIRMED", "answer": null, "evidence": null }
+    { "code": "R1_VIOLATION", "status": "CONFIRMED", "answer": "NO", "evidence": "건축물대장에 위반건축물 표시 없음" }
   ],
   "mortgageMax": 3600,
-  "warnings": ["건축물대장을 첨부하지 않아 위반건축물 여부는 직접 답해 주세요."]
+  "housingType": "NON_RESIDENTIAL",
+  "warnings": []
 }
 ```
 
-위 예시는 데모 케이스 B 등기부다. FE는 `CONFIRMED` 답을 유지하고 `UNCONFIRMED` 3개(`A1_OWNER`, `B3_JEONSE_RIGHT`, `R1_VIOLATION`)만 질문으로 보여준 뒤, 합친 10개로 2번 API를 부른다.
+위 예시는 데모 케이스 B 등기부다. FE는 `CONFIRMED` 답을 유지하고 `UNCONFIRMED` 2개(`A1_OWNER`, `B3_JEONSE_RIGHT`)만 질문으로 보여준 뒤, 합친 10개로 2번 API를 부른다.
 
 #### 에러
 
 | code | HTTP | 상황 | field |
 | --- | --- | --- | --- |
 | `INVALID_INPUT` | 400 | 주소 없음 | `address` |
-| `INVALID_INPUT` | 400 | 등기부 파일 없음, 형식이 JPG·PNG·PDF가 아님, 10MB 초과 | `registry` 또는 `buildingLedger` |
+| `INVALID_INPUT` | 400 | 등기부 또는 건축물대장 파일 없음, 형식이 JPG·PNG·PDF가 아님, 10MB 초과 | `registry` 또는 `buildingLedger` |
 | `OCR_UNREADABLE` | 422 | 서류 전체를 읽지 못함, 등기부가 아님, 엔진 실패·시간 초과 → FE는 재첨부 또는 10개 직접 답하기로 진행 | `null` |
 
 ## 6. 선택 로그인과 마이페이지 진단 기록
@@ -464,3 +443,4 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 | v0.1 | 11/9 | 초안 (예시 JSON 중심) | 이상혁 |
 | v1.0 | 11/9 | 명세서 형식으로 정리: 공통 규칙, API 목록, 필드 표, 에러 표, 요구사항 ID, 프론트 데모 기능. API 모양은 v0.1과 같음 | 이상혁 |
 | v1.1 | 11/9 | 강사님 피드백 반영 (D6): 5번 등기부 OCR API 추가 (안지산 #11 흐름: 주소+서류, 질문별 CONFIRMED/UNCONFIRMED), 에러 `OCR_UNREADABLE` 추가. 1~4번은 변경 없음 | 이상혁 |
+| v1.2 | 11/9 | D11: 3번 `GET /api/diagnoses/{id}` 삭제, 5번 건축물대장 필수 + `housingType` 추가, 일정표 할 일 16개 | 이상혁 |
