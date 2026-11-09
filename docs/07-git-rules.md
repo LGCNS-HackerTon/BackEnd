@@ -7,7 +7,7 @@
 
 ```
 이슈 만들기 → 브랜치 따기 → 작게 커밋 → PR 올리기 → 팀장이 머지 → main pull
-  #3       feat/3/score   feat : [BE1] ...   Closes #3   Squash and merge
+  #3       feat/3/score   feat : ...   Closes #3   Squash and merge
 ```
 
 | 규칙 | 한 줄 |
@@ -15,9 +15,9 @@
 | main | **직접 push 금지.** 무조건 PR로만 들어간다. GitHub 설정으로 막혀 있어서 push하면 거절돼 (팀장만 문서 동기화용으로 예외) |
 | 이슈 | 작업 하나 = 이슈 하나. 템플릿으로 만든다 |
 | 태그 | `feat` 기능 · `fix` 버그 · `refactor` 구조 개선 · `docs` 문서 · `test` 테스트 · `style` 형식 · `chore` 설정·도구 |
-| 이슈·PR 제목 | `태그 : [역할] 할 일` (예: `feat : [BE1] 진단 점수 계산`) |
+| 이슈·PR 제목 | `태그 : 할 일` (예: `feat : 진단 점수 계산`) |
 | 브랜치 | `태그/이슈번호/짧은영어` (예: `feat/3/diagnosis-score`) |
-| 커밋 | `태그 : [역할] 한 일` (예: `feat : [BE1] 부채비율 계산 추가`) |
+| 커밋 | `태그 : 한 일` (예: `feat : 부채비율 계산 추가`) |
 | PR | **1시간에 한 번 이상**, 템플릿 채우기, `Closes #이슈번호` |
 | 머지 | 팀장이 **Squash and merge** |
 | 마감 | 16:00 통합 전 **15:50까지 PR** 올리기 |
@@ -49,8 +49,7 @@ FE는 `FrontEnd.git`으로 바꿔서 clone.
 | 버그 찾았을 때 (주로 QA) | 버그 신고 | `bug` |
 | API·DB 모양을 바꾸고 싶을 때 | 계약 변경 요청 | `documentation` |
 
-- 제목: `태그 : [역할] 할 일` — 콜론 앞뒤에 공백 (예: `feat : [BE1] 진단 점수 계산`, `feat : [FE] 결과 화면`, `fix : [QA] 일정표 날짜 오류`)
-- 역할: `BE1` `BE2` `BE3` `FE` `DB` `QA` `팀장` `발표`
+- 제목: `태그 : 할 일` — 콜론 앞뒤에 공백 (예: `feat : 진단 점수 계산`, `feat : 결과 화면`, `fix : 일정표 날짜 오류`)
 
 | 태그 | 언제 |
 |---|---|
@@ -86,11 +85,11 @@ git switch -c feat/3/diagnosis-score
 
 ## 5. 커밋
 
-- 형식: `태그 : [역할] 한 일` (한국어, 무엇을 했는지만). 커밋 태그는 이슈 태그와 달라도 된다
-  - `feat : [BE1] 부채비율 계산 추가`
-  - `feat : [FE] 특약 복사 버튼 추가`
-  - `chore : [DB] 질문 10개 seed 추가`
-  - `test : [QA] 진단 테스트 시나리오 추가`
+- 형식: `태그 : 한 일` (한국어, 무엇을 했는지만). 커밋 태그는 이슈 태그와 달라도 된다
+  - `feat : 부채비율 계산 추가`
+  - `feat : 특약 복사 버튼 추가`
+  - `chore : 질문 10개 seed 추가`
+  - `test : 진단 테스트 시나리오 추가`
 - **작게 자주.** 기능 하나가 돌아가면 바로 커밋
 - 올리면 안 되는 것: `.env`(API 키, DB 비밀번호), `node_modules/`, `build/`, `target/`, IDE 설정 폴더. BE3와 FE 드라이버가 뼈대에 `.gitignore`를 넣는다
 
@@ -122,7 +121,7 @@ push하면 GitHub에 **Compare & pull request** 버튼이 뜬다. 눌러서 템�
 | 항목 | 규칙 |
 |---|---|
 | 방향 | 내 브랜치 → `main` |
-| 제목 | 이슈 제목 그대로 (`feat : [BE1] 진단 점수 계산`) |
+| 제목 | 이슈 제목 그대로 (`feat : 진단 점수 계산`) |
 | 본문 | 템플릿 체크리스트 채우기, `Closes #3` (머지되면 이슈가 자동으로 닫힘) |
 | Reviewers | 같은 영역 1명 (BE끼리 / FE는 화면 담당 리뷰어) |
 | 머지 | **팀장이** Squash and merge. 오늘은 리뷰보다 속도라 훑어보고 문제없으면 바로 |
@@ -165,7 +164,7 @@ git add .
 ```
 
 ```bash
-git commit -m "chore : [BE1] main 충돌 해결"
+git commit -m "chore : main 충돌 해결"
 ```
 
 ```bash
@@ -189,7 +188,7 @@ git push
 | 지금 브랜치 보기 | `git branch` |
 | 바뀐 내용 보기 | `git diff` |
 | 전부 커밋 준비 | `git add .` |
-| 커밋 | `git commit -m "태그 : [역할] 한 일"` |
+| 커밋 | `git commit -m "태그 : 한 일"` |
 | 최근 커밋 보기 | `git log --oneline -5` |
 | 실수로 main에서 작업했을 때 (커밋 전) | `git switch -c 역할/번호-이름` → 바뀐 내용이 새 브랜치로 따라온다 |
 

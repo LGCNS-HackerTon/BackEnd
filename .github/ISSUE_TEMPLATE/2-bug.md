@@ -1,7 +1,7 @@
 ---
 name: 버그 신고
 about: 기대한 대로 동작하지 않을 때
-title: "fix : [역할] 어디서 무엇이"
+title: "fix : 어디서 무엇이"
 labels: bug
 assignees: ''
 ---
