@@ -132,16 +132,16 @@
 
 ## 6. 역할별 AI 시작 문장
 
-AGENTS.md를 첨부하고 시작. `[스택]`은 확정되면 바꾸기.
+AGENTS.md를 첨부하고 시작.
 
 | 역할 | AI 시작 문장 |
 |---|---|
-| BE1 | "AGENTS.md와 docs/01, docs/03을 읽어. 나는 BE1이야. [스택]으로 docs/01 2~3절 점수 규칙을 계산하는 함수와, 데모 케이스 A/B/C(0·70·40점) 테스트를 먼저 만들어줘." |
-| BE2 | "AGENTS.md와 docs/01 4절, docs/03 2절을 읽어. 나는 BE2야. 진단 점수 결과를 받아 factors, commonAdvice, 템플릿 aiExplanation, warnings를 docs/03 모양 그대로 만드는 코드를 [스택]으로 만들어줘. 오늘은 AI를 부르지 않고 aiUsed=false." |
-| BE3 | "AGENTS.md와 docs/02, docs/03을 읽어. 나는 BE3야. [스택] 프로젝트 뼈대(에러 응답 형식, 프론트 포트 CORS 허용)와 GET /api/questions, GET /api/schedule을 docs/03 그대로 만들어줘." |
-| FE1 | "AGENTS.md와 docs/03을 읽어. 나는 FE1이야. [스택] 프로젝트 뼈대, 라우팅(첫 화면/질문/결과/일정표), API 클라이언트를 만들고, docs/03 예시 JSON을 돌려주는 Mock 모드를 켜고 끌 수 있게 해줘." |
+| BE1 | "AGENTS.md와 docs/01, docs/03을 읽어. 나는 BE1이야. Spring Boot 3(Java 17, Gradle, JPA)으로 docs/01 2~3절 점수 규칙을 계산하는 함수와, 데모 케이스 A/B/C(0·70·40점) 테스트를 먼저 만들어줘." |
+| BE2 | "AGENTS.md와 docs/01 4절, docs/03 2절을 읽어. 나는 BE2야. 진단 점수 결과를 받아 factors, commonAdvice, 템플릿 aiExplanation, warnings를 docs/03 모양 그대로 만드는 코드를 Spring Boot 3(Java 17, Gradle, JPA)으로 만들어줘. 오늘은 AI를 부르지 않고 aiUsed=false." |
+| BE3 | "AGENTS.md와 docs/02, docs/03을 읽어. 나는 BE3야. Spring Boot 3(Java 17, Gradle, JPA) 프로젝트 뼈대(에러 응답 형식, 프론트 포트 CORS 허용)와 GET /api/questions, GET /api/schedule을 docs/03 그대로 만들어줘." |
+| FE1 | "AGENTS.md와 docs/03을 읽어. 나는 FE1이야. React + Vite(JavaScript, Tailwind) 프로젝트 뼈대, 라우팅(첫 화면/질문/결과/일정표), API 클라이언트를 만들고, docs/03 예시 JSON을 돌려주는 Mock 모드를 켜고 끌 수 있게 해줘." |
 | FE2 | "AGENTS.md와 docs/01 1~2절, docs/03 1~2절을 읽어. 나는 FE2야. 질문을 섹션 순서대로 하나씩 보여주고 예/아니오/모르겠어요로 답하는 화면과 금액 입력 화면을 만들어줘. 마지막에 POST /api/diagnoses 요청 모양으로 모아줘." |
 | FE3 | "AGENTS.md와 docs/03 2절을 읽어. 나는 FE3야. 진단 응답 JSON으로 결과 화면을 만들어줘. 등급 색, factors 목록, 중개사 질문, 특약 복사 버튼, 면책 문구, warnings 표시가 필요해." |
 | FE4 | "AGENTS.md와 docs/02, docs/03 4절을 읽어. 나는 FE4야. 날짜 입력 → GET /api/schedule 결과를 지난 일/오늘/다가오는 일로 묶어 보여주는 화면을 만들어줘. important=true는 빨간 강조." |
-| DB | "AGENTS.md와 docs/01, docs/02, docs/04를 읽어. 나는 DB 담당이야. docs/04 DDL을 [DB]에 맞게 확인하고, docs/01 질문 10개(설명은 해요체로)와 docs/02 할 일 14개를 seed.sql로 만들어줘." |
+| DB | "AGENTS.md와 docs/01, docs/02, docs/04를 읽어. 나는 DB 담당이야. docs/04 DDL을 MySQL 8에 맞게 확인하고, docs/01 질문 10개(설명은 해요체로)와 docs/02 할 일 14개를 seed.sql로 만들어줘." |
 | QA | "AGENTS.md와 docs/01, docs/03을 읽어. 나는 QA야. 데모 케이스 A/B/C와 입력 오류 케이스로 테스트 시나리오 표를 만들고, 17시 데모 대본을 케이스 B 기준으로 써줘." |

@@ -16,10 +16,43 @@
 
 | 영역 | 스택 |
 |---|---|
-| 백엔드 | **(미정 — 확정되면 여기 채우기)** |
-| 프론트엔드 | **(미정)** |
-| DB | **(미정, 초안은 MySQL 기준)** |
-| AI | **(미정)** — API 키는 `.env`에만, 절대 커밋 금지 |
+| 백엔드 | **Java 17 + Spring Boot 3 + Spring Data JPA**, Gradle, 포트 `8080` |
+| 프론트엔드 | **React + Vite (JavaScript)**, Tailwind CSS, 포트 `5173` |
+| DB | **MySQL 8**, DB 이름 `jeonse` |
+| AI | 내일 BE2가 연동 (오늘은 템플릿). API 키는 `.env`에만, 절대 커밋 금지 |
+
+### 백엔드 패키지 구조
+기능별로 나눠서 BE 3명이 같은 파일을 덜 건드리게 한다. 기본 패키지 `com.lgcns.jeonse`.
+
+| 패키지 | 담당 | 내용 |
+|---|---|---|
+| `common` | BE3 | 에러 응답 형식, 예외 처리, CORS 설정 |
+| `question` | BE3 | `GET /api/questions`, `registry_questions` 엔티티 |
+| `schedule` | BE3 | `GET /api/schedule`, `checklist_items` 엔티티 |
+| `diagnosis` | BE1 | `POST /api/diagnoses`, 점수 계산, `diagnoses`·`diagnosis_answers` 엔티티 |
+| `diagnosis.advice` | BE2 | 결과 문구(factors, commonAdvice, 템플릿 설명) |
+
+각 패키지 안은 `Controller` / `Service` / `Repository` / 엔티티 / `dto`로 나눈다.
+
+### 프론트 폴더 구조
+
+| 폴더 | 담당 | 내용 |
+|---|---|---|
+| `src/api/` | FE1 | API 클라이언트, Mock 데이터 (docs/03 예시 JSON) |
+| `src/components/common/` | FE1 | 버튼, 카드, 등급 색 |
+| `src/pages/Home/` | FE1 | S1 첫 화면 `/` |
+| `src/pages/Diagnosis/` | FE2 | S2 진단 `/diagnosis` |
+| `src/pages/Result/` | FE3 | S3 결과 `/result` |
+| `src/pages/Schedule/` | FE4 | S4 일정표 `/schedule` |
+
+### 환경 변수 (`.env.example`만 커밋)
+
+| 저장소 | 변수 |
+|---|---|
+| BackEnd | `DB_URL=jdbc:mysql://localhost:3306/jeonse`, `DB_USERNAME`, `DB_PASSWORD` |
+| FrontEnd | `VITE_API_BASE_URL=http://localhost:8080`, `VITE_USE_MOCK=true` (BE 연결 전엔 true) |
+
+- CORS는 `http://localhost:5173`을 허용한다 (BE3)
 
 ## 3. 진실의 원천 (Source of Truth)
 
