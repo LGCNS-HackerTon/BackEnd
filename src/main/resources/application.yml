@@ -9,9 +9,18 @@ spring:
     hibernate:
       ddl-auto: update
     open-in-view: false
+  jackson:
+    deserialization:
+      # 금액에 소수(24000.5)가 오면 잘라 쓰지 않고 400으로 돌려준다 (docs/03 2절)
+      accept-float-as-int: false
   h2:
     console:
       enabled: true
+
+# 진단 결과 쉬운 말 설명 (docs/08 AI). 키가 없으면 템플릿 문장을 쓴다
+anthropic:
+  api-key: ${ANTHROPIC_API_KEY:}
+  model: ${ANTHROPIC_MODEL:claude-opus-5-5}
 
 server:
   port: 8080

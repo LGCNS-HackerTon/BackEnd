@@ -1,9 +1,11 @@
 package com.lgcns.jeonse.global.exception;
 
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.lgcns.jeonse.global.apiPayload.ApiError;
 import java.time.LocalDate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -28,6 +30,15 @@ public class ExceptionAdvice {
         return ResponseEntity.badRequest().body(new ApiError(new ApiError.ErrorDetail(
                 "INVALID_INPUT", exception.getRequiredType() == LocalDate.class
                         ? "날짜는 YYYY-MM-DD 형식으로 입력해 주세요." : "숫자로 입력해 주세요.", exception.getName())));
+    }
+
+    // JSON 형식 오류는 field null, 타입이 틀린 값(소수 금액 등)은 그 최상위 필드 이름 (docs/03 2절)
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> unreadableBody(HttpMessageNotReadableException exception) {
+        String field = exception.getCause() instanceof MismatchedInputException mismatch && !mismatch.getPath().isEmpty()
+                ? mismatch.getPath().get(0).getFieldName() : null;
+        return ResponseEntity.badRequest().body(new ApiError(new ApiError.ErrorDetail(
+                "INVALID_INPUT", "입력 형식이 올바르지 않아요. 다시 확인해 주세요.", field)));
     }
 
     @ExceptionHandler(Exception.class)
