@@ -1,8 +1,8 @@
-# 첫 전세 가이드 API 명세서
+# 전세역전 API 명세서
 
-첫 전세 계약 가이드 · LG CNS AM Inspire 6기 해커톤 · 1팀 · **FE ↔ BE 계약**
+전세역전 (팀 공감) · LG CNS AM Inspire 6기 해커톤 · 1팀 · **FE ↔ BE 계약**
 
-- 작성자: 이상혁 (팀장) · 작성일: 2026.11.09 · 버전: v1.0 · 기준: docs/01 점수 규칙, docs/02 일정 규칙, docs/08 요구사항
+- 작성자: 이상혁 (팀장) · 작성일: 2026.11.09 · 버전: v1.1 · 기준: docs/01 점수 규칙, docs/02 일정 규칙, docs/08 요구사항
 - 바꾸려면 **계약 변경 요청 이슈**부터 올리고 이 문서를 먼저 고친 뒤 코드를 고친다. 맨 아래 변경 이력에 적기
 - FE는 BE가 완성되기 전까지 이 문서의 예시 JSON을 Mock으로 쓴다
 
@@ -10,11 +10,11 @@
 
 | 항목 | 내용 |
 | --- | --- |
-| 범위 | API 4개 = P0 3개(질문 조회, 진단, 일정표) + P2 1개(진단 다시 보기) |
+| 범위 | API 5개 = P0 3개(질문 조회, 진단, 일정표) + P1 1개(등기부 OCR) + P2 1개(진단 다시 보기) |
 | 호출 주소 | `http://localhost:8080/api/...` (FE는 `VITE_API_BASE_URL`로 지정) |
-| 형식 | JSON, UTF-8 |
+| 형식 | JSON, UTF-8. **OCR(5번)만 요청이 `multipart/form-data`** |
 | 인증 | **없음.** 모든 API는 로그인 없이 호출한다. 로그인·마이페이지는 프론트 브라우저 저장 데모라 서버 API가 없다 (5장) |
-| 담당 | 공통 규칙·에러 형식·CORS 문한일(BE3) · 진단 송석주(BE1), 결과 문구 최다인(BE2) · 질문·일정표 문한일(BE3) |
+| 담당 | 공통 규칙·에러 형식·CORS 문한일(BE3) · 진단 송석주(BE1), 결과 문구 최다인(BE2) · 질문·일정표 문한일(BE3) · OCR 최다인(BE2) |
 | 요구사항 | docs/08-requirements.md의 ID(DG, RS, SC)를 API마다 표기 |
 
 ## 2. 공통 규칙
@@ -46,6 +46,7 @@
 | --- | --- | --- | --- |
 | `INVALID_INPUT` | 400 | 입력값이 규칙에 안 맞음, JSON 형식 오류, 없는 enum 값, 날짜 형식 오류 | 문제 필드 이름 (없으면 `null`) |
 | `NOT_FOUND` | 404 | 없는 진단 id | `null` |
+| `OCR_UNREADABLE` | 422 | 사진에서 등기부 글자를 읽지 못함, OCR 엔진 실패·시간 초과 | `null` |
 | `INTERNAL_ERROR` | 500 | 처리 못 한 서버 오류. 내부 메시지는 숨긴다 | `null` |
 
 ## 3. API 목록
@@ -56,6 +57,7 @@
 | 2 | 진단 | 진단하기 | POST | `/api/diagnoses` | P0 | 송석주, 최다인 | DG-07~11, RS-01~07 |
 | 3 | 진단 | 진단 결과 다시 보기 | GET | `/api/diagnoses/{id}` | P2 | 송석주 | RS-09 |
 | 4 | 일정표 | 계약 일정표 | GET | `/api/schedule` | P0 | 문한일 | SC-01~05 |
+| 5 | 진단 | 등기부 OCR (서류로 답 채우기) | POST | `/api/ocr/registry` | P1 | 최다인 | DG-13~15 |
 
 ## 4. API 상세
 
@@ -376,7 +378,74 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 | `INVALID_INPUT` | 400 | 날짜 순서가 거꾸로 | `balanceDate` 또는 `moveInDate` |
 | `INVALID_INPUT` | 400 | `termMonths`가 1 미만 | `termMonths` |
 
-## 5. 서버 API가 없는 기능 (프론트 데모)
+---
+
+### 5. [진단] 등기부 OCR (서류로 답 채우기)
+
+`POST /api/ocr/registry` · 인증 없음 · **P1** · 담당 최다인 · DG-13~15 · 결정 D3-3, D6 · 팀 안내 docs/09
+
+| 항목 | 내용 |
+| --- | --- |
+| 기능 | 주소와 서류(등기부등본, 건축물대장)로 **질문 10개 각각의 확인 여부와 답**, 채권최고액 합계를 돌려준다. 점수는 계산하지 않는다 (점수는 2번 API만) |
+| 흐름 | docs/06 S2: 주소 → 첨부 → **이 API** → 미확인 질문만 보완 → 금액 → 2번 API |
+| 엔진 | BE2가 정한다 (docs/09 5절 후보, decision-log D9). 엔진이 바뀌어도 이 응답 모양은 같다 |
+| 개인정보 | 서류·주소는 **저장하지 않는다** (메모리 처리 후 폐기). 응답·로그에 소유자 이름을 남기지 않는다. 단 `A1_OWNER` 비교용 소유자 이름은 `evidence`로 화면에만 보여준다 (NFR-06) |
+| 시간 | 엔진 호출 타임아웃 10초. 넘으면 422 `OCR_UNREADABLE` |
+
+#### Request — `multipart/form-data`
+
+| 필드 | 타입 | 필수 | 규칙 |
+| --- | --- | --- | --- |
+| `address` | string | ✅ | 계약할 집 주소 + 동·호수 (예: `서울 마포구 ○○로 12, 101동 1204호`). 서류와 같은 집인지 비교하는 데만 쓴다 |
+| `registry` | file | ✅ | 등기부등본 1개. JPG · PNG · PDF, 10MB 이하. **"말소사항 미포함"** 발급본 권장 |
+| `buildingLedger` | file | | 건축물대장 1개 (같은 형식·크기). 없으면 `R1_VIOLATION`은 미확인 |
+
+#### Response Body — HTTP 200
+
+| 필드 | 타입 | 설명 |
+| --- | --- | --- |
+| `addressMatch` | string | `MATCH` / `MISMATCH` / `UNKNOWN`. `MISMATCH`면 FE는 이 서류 결과를 쓰지 않고 **주소 수정 또는 재첨부**로 보낸다 |
+| `answers` | array | **질문 10개 전부**, `order` 순서 |
+| `answers[].code` | string | 질문 코드 |
+| `answers[].status` | string | `CONFIRMED`(서류로 확인) / `UNCONFIRMED`(확인 못 함 → 사용자가 직접 답) |
+| `answers[].answer` | string \| null | `CONFIRMED`면 `YES`/`NO`, `UNCONFIRMED`면 `null`. **판독 실패를 `NO`로 채우지 않는다** |
+| `answers[].evidence` | string \| null | 근거 문장 (화면에 보여줌). 예: `"을구 1번 근저당권설정 채권최고액 금36,000,000원"` |
+| `mortgageMax` | int \| null | 유효한 근저당 채권최고액 합계 (만원). 근저당이 `CONFIRMED YES`인데 금액을 못 읽으면 `null` → FE는 **금액만** 입력받는다 |
+| `warnings` | string[] | 예: `"을구 일부를 읽지 못했어요. 해당 질문은 직접 답해 주세요."` |
+
+질문별로 확인하는 근거는 docs/01 1.1절을 따른다. `A1_OWNER`는 계약 상대방과 비교할 근거가 서버에 없으므로 보통 `UNCONFIRMED`로 돌려주고, `evidence`에 등기부상 소유자 이름을 보여준다.
+
+```json
+{
+  "addressMatch": "MATCH",
+  "answers": [
+    { "code": "T1_ADDRESS", "status": "CONFIRMED", "answer": "YES", "evidence": "표제부 주소·동·호수가 입력 주소와 같음" },
+    { "code": "T2_USAGE", "status": "CONFIRMED", "answer": "NO", "evidence": "표제부 건물내역: 제2종근린생활시설" },
+    { "code": "A1_OWNER", "status": "UNCONFIRMED", "answer": null, "evidence": "등기부상 소유자: 홍○○ (계약 상대방과 같은지 확인해 주세요)" },
+    { "code": "A2_RECENT_OWNER", "status": "CONFIRMED", "answer": "YES", "evidence": "갑구 3번 소유권이전 2026년9월1일 접수" },
+    { "code": "A3_TRUST", "status": "CONFIRMED", "answer": "NO", "evidence": "갑구에 유효한 신탁 기록 없음" },
+    { "code": "A4_SEIZURE", "status": "CONFIRMED", "answer": "NO", "evidence": "갑구에 유효한 압류·가압류·가처분·가등기·경매 기록 없음" },
+    { "code": "B1_MORTGAGE", "status": "CONFIRMED", "answer": "YES", "evidence": "을구 1번 근저당권설정 채권최고액 금36,000,000원" },
+    { "code": "B2_LEASE_REG", "status": "CONFIRMED", "answer": "NO", "evidence": "을구에 유효한 주택임차권 기록 없음" },
+    { "code": "B3_JEONSE_RIGHT", "status": "UNCONFIRMED", "answer": null, "evidence": "을구 2번 일부를 읽지 못함" },
+    { "code": "R1_VIOLATION", "status": "UNCONFIRMED", "answer": null, "evidence": null }
+  ],
+  "mortgageMax": 3600,
+  "warnings": ["건축물대장을 첨부하지 않아 위반건축물 여부는 직접 답해 주세요."]
+}
+```
+
+위 예시는 데모 케이스 B 등기부다. FE는 `CONFIRMED` 답을 유지하고 `UNCONFIRMED` 3개(`A1_OWNER`, `B3_JEONSE_RIGHT`, `R1_VIOLATION`)만 질문으로 보여준 뒤, 합친 10개로 2번 API를 부른다.
+
+#### 에러
+
+| code | HTTP | 상황 | field |
+| --- | --- | --- | --- |
+| `INVALID_INPUT` | 400 | 주소 없음 | `address` |
+| `INVALID_INPUT` | 400 | 등기부 파일 없음, 형식이 JPG·PNG·PDF가 아님, 10MB 초과 | `registry` 또는 `buildingLedger` |
+| `OCR_UNREADABLE` | 422 | 서류 전체를 읽지 못함, 등기부가 아님, 엔진 실패·시간 초과 → FE는 재첨부 또는 10개 직접 답하기로 진행 | `null` |
+
+## 6. 서버 API가 없는 기능 (프론트 데모)
 
 | 기능 | 저장 위치 | 비고 |
 | --- | --- | --- |
@@ -392,3 +461,4 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 | --- | --- | --- | --- |
 | v0.1 | 11/9 | 초안 (예시 JSON 중심) | 이상혁 |
 | v1.0 | 11/9 | 명세서 형식으로 정리: 공통 규칙, API 목록, 필드 표, 에러 표, 요구사항 ID, 프론트 데모 기능. API 모양은 v0.1과 같음 | 이상혁 |
+| v1.1 | 11/9 | 강사님 피드백 반영 (D6): 5번 등기부 OCR API 추가 (안지산 #11 흐름: 주소+서류, 질문별 CONFIRMED/UNCONFIRMED), 에러 `OCR_UNREADABLE` 추가. 1~4번은 변경 없음 | 이상혁 |
