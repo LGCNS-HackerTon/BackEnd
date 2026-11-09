@@ -35,7 +35,8 @@ public class ClovaOcrClient {
 
     /** format: jpg · png · pdf */
     public String read(byte[] file, String format) {
-        if (url.isBlank() || secret.isBlank()) throw new OcrUnreadableException();
+        // 서류와 비밀키가 평문으로 나가지 않게 HTTPS 주소만 쓴다
+        if (secret.isBlank() || !url.startsWith("https://")) throw new OcrUnreadableException();
         Map<String, Object> body = Map.of(
                 "version", "V2",
                 "requestId", UUID.randomUUID().toString(),

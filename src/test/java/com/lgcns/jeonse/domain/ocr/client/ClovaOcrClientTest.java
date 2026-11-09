@@ -44,4 +44,11 @@ class ClovaOcrClientTest {
 
         assertThatThrownBy(() -> client.read(new byte[]{1}, "png")).isInstanceOf(OcrUnreadableException.class);
     }
+
+    @Test
+    void HTTPS가_아닌_주소로는_보내지_않는다() {
+        ClovaOcrClient client = new ClovaOcrClient(RestClient.builder(), "http://localhost:1/general", "secret");
+
+        assertThatThrownBy(() -> client.read(new byte[]{1}, "png")).isInstanceOf(OcrUnreadableException.class);
+    }
 }
