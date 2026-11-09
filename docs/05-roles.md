@@ -87,12 +87,18 @@
 - [ ] `diagnoses`, `diagnosis_answers` 저장
 - [ ] 응답 모양이 docs/03 2절 예시와 똑같은지 비교
 
-### BE2 결과 문구 (최다인)
+### BE2 결과 문구 · OCR (최다인)
 - [ ] docs/01 4절 질문·특약 문구, `DEBT_RATIO`·공통 안내를 코드 상수로
 - [ ] `factors` 정렬: 점수 큰 순서, 근저당 있으면 0점이어도 마지막에
 - [ ] 템플릿 `aiExplanation` 만들기, `aiUsed: false`
 - [ ] 선순위 보증금이 없으면 `warnings`에 문장 추가
 - [ ] (17시 이후) AI 연동: 타임아웃 5초, 실패하면 템플릿. 키는 `.env`
+- [ ] **OCR 엔진 결정** (docs/09 5절 후보) → decision-log **D9**에 엔진·서류 외부 전송 여부 기록
+- [ ] `ocr` 패키지에 `POST /api/ocr/registry` (docs/03 5번): `address` + `registry` + `buildingLedger`(선택) multipart
+- [ ] 응답은 질문 **10개 전부** `CONFIRMED/UNCONFIRMED`. 판독 못 한 건 `NO`가 아니라 `UNCONFIRMED`
+- [ ] `application.yml`에 업로드 10MB 설정 (`spring.servlet.multipart.max-file-size`, `max-request-size`. 기본 1MB)
+- [ ] 서류·주소는 **저장 금지**(디스크·DB 쓰기 없음), 로그에 이름·주소·파일 내용 금지. 엔진 타임아웃 10초 → 422 `OCR_UNREADABLE`
+- [ ] 손호성 샘플(케이스 B)로 응답이 docs/03 5번 예시와 같은지 확인
 
 ### BE3 뼈대·일정 (문한일)
 - [ ] **13:40까지** 뼈대 PR: 실행되는 서버, 에러 응답 형식, CORS(`http://localhost:5173` 허용), docs/AGENTS.md 패키지 구조
@@ -120,6 +126,7 @@
 - [ ] `db/seed.sql`: 질문 10개(설명은 해요체로), 할 일 14개, 링크 URL
 - [ ] `db/README.md` 실행 방법 3줄 → **14:00까지 BE 전원 로컬 실행 확인**
 - [ ] 발표용 ERD 그림 1장
+- [ ] **OCR 데모용 가짜 서류 샘플** 케이스 A/B/C: 등기부등본 + 건축물대장 이미지·PDF (실제 사람 이름·주소 금지, "말소사항 미포함" 형태) → `db/samples/`
 
 ### QA (이지원)
 - [ ] 데모 케이스 A/B/C 기대 결과표 (docs/01 5절)
@@ -128,6 +135,8 @@
 - [ ] decision-log.md에 D5(팀 이름) 등 채우기
 - [ ] docs/02 "확인 필요" 항목 공식 출처로 확인, 링크 4개 눌러보기
 - [ ] 17:00 데모 대본: 케이스 B로 진단 → 결과 → 특약 복사 → 일정표
+- [ ] (내일) OCR 시나리오 5개: 정보 충분 / 일부 미확인 / 전체 판독 실패(422) / 주소 불일치 / 근저당 금액만 미확인 → 샘플 서류로 확인
+- [ ] (내일) 업로드 오류: 파일 없음, PDF·이미지 아님, 10MB 초과 → 400 `INVALID_INPUT`
 
 ## 6. 협업 규칙
 
@@ -149,6 +158,7 @@ docs/AGENTS.md를 첨부하고 시작.
 |---|---|
 | BE1 | "docs/AGENTS.md와 docs/01, docs/03을 읽어. 나는 BE1이야. Spring Boot 3(Java 17, Gradle, JPA)으로 docs/01 2~3절 점수 규칙을 계산하는 함수와, 데모 케이스 A/B/C(0·70·40점) 테스트를 먼저 만들어줘." |
 | BE2 | "docs/AGENTS.md와 docs/01 4절, docs/03 2절을 읽어. 나는 BE2야. 진단 점수 결과를 받아 factors, commonAdvice, 템플릿 aiExplanation, warnings를 docs/03 모양 그대로 만드는 코드를 Spring Boot 3(Java 17, Gradle, JPA)으로 만들어줘. 오늘은 AI를 부르지 않고 aiUsed=false." |
+| BE2 OCR | "docs/AGENTS.md와 docs/01 1.1절, docs/03 5번, docs/09를 읽어. 나는 BE2야. ocr 패키지에 POST /api/ocr/registry를 Spring Boot 3로 만들어줘. multipart(address, registry, buildingLedger), 응답은 질문 10개 CONFIRMED/UNCONFIRMED. 엔진 호출은 인터페이스 하나로 감싸고, 파일은 저장하지 말고 로그에 개인정보를 남기지 마. 업로드 10MB 설정도 해줘." |
 | BE3 | "docs/AGENTS.md와 docs/02, docs/03을 읽어. 나는 BE3야. Spring Boot 3(Java 17, Gradle, JPA) 프로젝트 뼈대(docs/AGENTS.md 패키지 구조, 에러 응답 형식, localhost:5173 CORS 허용)와 GET /api/questions, GET /api/schedule을 docs/03 그대로 만들어줘." |
 | FE 뼈대 | "docs/AGENTS.md와 docs/03, docs/06을 읽어. React + Vite(JavaScript, Tailwind)로 docs/AGENTS.md 폴더 구조대로 뼈대를 만들고, 라우팅 4개와 API 클라이언트, docs/03 예시 JSON을 돌려주는 Mock 모드(VITE_USE_MOCK)를 만들어줘." |
 | FE S2 | "docs/AGENTS.md와 docs/01 1~2절, docs/03 1~2절, docs/06 S2를 읽어. 질문을 섹션 순서대로 하나씩 보여주고 예/아니오/모르겠어요로 답하는 화면과 금액 입력 화면을 만들어줘. 마지막에 POST /api/diagnoses 요청 모양으로 모아줘." |
