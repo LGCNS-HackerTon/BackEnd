@@ -19,10 +19,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+// 트랜잭션을 걸지 않는다: AI 응답(최대 5초)을 기다리는 동안 DB 커넥션을 잡고 있지 않게
 @Service
-@Transactional(readOnly = true)
 public class DiagnosisService {
     public static final String MORTGAGE = "B1_MORTGAGE";
     private static final Set<String> ANSWERS = Set.of("YES", "NO", "UNKNOWN");
@@ -98,7 +97,7 @@ public class DiagnosisService {
         for (DiagnosisRequestDTO.Answer answer : answers) {
             if (answer == null || answer.code() == null || !codes.contains(answer.code()))
                 throw new InvalidInputException("없는 질문 코드가 있어요", "answers");
-            if (!ANSWERS.contains(answer.answer()))
+            if (answer.answer() == null || !ANSWERS.contains(answer.answer()))
                 throw new InvalidInputException("답은 YES, NO, UNKNOWN 중 하나여야 해요", "answers");
             if (result.put(answer.code(), answer.answer()) != null)
                 throw new InvalidInputException("같은 질문에 두 번 답했어요", "answers");

@@ -206,6 +206,9 @@ class DiagnosisServiceTest {
         Map<String, String> wrongAnswer = safeAnswers();
         wrongAnswer.put("T1_ADDRESS", "MAYBE");
         assertInvalid(request(1, 1, 0, 0, wrongAnswer), "answers", "답은 YES, NO, UNKNOWN 중 하나여야 해요");
+        Map<String, String> nullAnswer = safeAnswers();
+        nullAnswer.put("T1_ADDRESS", null);
+        assertInvalid(request(1, 1, 0, 0, nullAnswer), "answers", "답은 YES, NO, UNKNOWN 중 하나여야 해요");
         Map<String, String> wrongCode = safeAnswers();
         wrongCode.put("X1_NOPE", "YES");
         assertInvalid(request(1, 1, 0, 0, wrongCode), "answers", "없는 질문 코드가 있어요");
