@@ -9,7 +9,7 @@
 |---|---|---|
 | `users` | 선택 로그인 회원과 진단 기록 소유자 | 회원가입 API가 저장 |
 | `registry_questions` | 등기부 질문 10개 + 점수 + 행동 안내 템플릿 | seed (docs/01에서 옮김) |
-| `checklist_items` | 일정표 할 일 14개 | seed (docs/02에서 옮김) |
+| `checklist_items` | 일정표 할 일 16개 | seed (docs/02에서 옮김) |
 | `diagnoses` | 진단 1번 = 1줄. 입력 금액, 점수, 등급, AI 설명 | API가 저장 |
 | `diagnosis_answers` | 진단별 질문 답 10개 | API가 저장 |
 
@@ -102,7 +102,7 @@ OCR 원본 서류는 저장하지 않는다. 로그인 회원의 진단 원본 �
 ## DB 담당이 할 일
 
 1. 위 DDL로 로컬 DB 만들기, 실행 방법을 `db/README.md`에 3줄로 적기
-2. `db/seed.sql`: docs/01 질문 10개, docs/02 할 일 14개를 그대로 INSERT
+2. `db/seed.sql`: docs/01 질문 10개, docs/02 할 일 16개를 그대로 INSERT
 3. QA와 함께 데모 케이스 A/B/C가 들어간 상태로 확인
 4. 발표용 ERD 그림 1장 (위 관계도 기준)
 5. OCR 데모용 **가짜 서류 샘플** (케이스 A/B/C, 실제 이름·주소 금지) → `db/samples/` (docs/09)

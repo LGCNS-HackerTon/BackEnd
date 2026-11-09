@@ -9,10 +9,10 @@
 | # | 기능 | 만드는 사람 | 17:00 상태 |
 |---|---|---|---|
 | 1 | **등기부 진단**: 주소·서류 첨부 → OCR → 미확인 항목 보완 → 규칙 기반 점수·등급 → 결과 화면(위험 이유, 중개사 질문, 특약 복사, 면책 문구) | BE1, BE2, FE | 기존 진단 기준. OCR 흐름은 개정 초안, 담당·일정 협의 중 |
-| 2 | **계약 일정표**: 날짜 입력 → D-day 할 일 14개 | BE3, FE | ✅ 실제 구현 |
+| 2 | **계약 일정표**: 날짜 입력 → D-day 할 일 16개 | BE3, FE | ✅ 실제 구현 |
 | + | AI 쉬운 말 설명 | BE2 | 🟡 오늘은 템플릿. **AI는 17시 이후 / 내일 오전** |
 
-**오늘 안 만드는 것**: AI 호출, 공유 링크(`GET /api/diagnoses/{id}`), 실거래가 API, 블랙리스트. **OCR은 오늘 FE Mock, 실제 연동은 내일 12시 전** ([docs/09](09-feedback-ocr.md)). 누가 "이것도 넣자" 하면 decision-log에 적어두고 내일 판단.
+**오늘 안 만드는 것**: AI 호출, 실거래가 API, 블랙리스트. **OCR은 오늘 FE Mock, 실제 연동은 내일 12시 전** ([docs/09](09-feedback-ocr.md)). 누가 "이것도 넣자" 하면 decision-log에 적어두고 내일 판단.
 
 ## OCR 흐름 개정 체크리스트
 
@@ -30,7 +30,7 @@
 | **BE1** 진단 | 송석주 | `POST /api/diagnoses` + **점수 계산 로직** + 테스트 | BackEnd `diagnosis` | 데모 케이스 A/B/C = 0·70·40점 |
 | **BE2** 결과 문구 | 최다인 | docs/01 4절 템플릿 → 코드 상수, `factors`·`commonAdvice`·템플릿 `aiExplanation`, BE1 지원. 17시 이후 AI 연동 | BackEnd `diagnosis.advice` | 진단 응답에 질문·특약 문구가 채워짐 |
 | **BE3** 뼈대·일정 | 문한일 | 프로젝트 뼈대(에러 형식, CORS), `GET /api/questions`, `GET /api/schedule` | BackEnd `common`, `question`, `schedule` | 13:40까지 뼈대 PR, API 2개 동작 |
-| **DB** | 손호성 | DDL, `seed.sql`(질문 10개·할 일 14개), 실행 방법 3줄, 발표용 ERD | BackEnd `db/` | 14:00까지 전원 로컬 DB 실행 |
+| **DB** | 손호성 | DDL, `seed.sql`(질문 10개·할 일 16개), 실행 방법 3줄, 발표용 ERD | BackEnd `db/` | 14:00까지 전원 로컬 DB 실행 |
 | **QA** | 이지원 | 테스트 시나리오, 계약서대로 동작하는지 확인, decision-log 관리, 17:00 데모 대본 | BackEnd `qa/`, `docs/decision-log.md` | 시나리오 표 + 데모 리허설 1회 |
 
 > **팀장이 FE까지 맡으니까 시간 관리를 나눠 들자.** 정각마다 체크(막힌 사람, PR 대기)와 16:00 통합 시간 알림은 FE 리뷰어 중 한 명이 맡아주면 팀장이 화면에 집중할 수 있어. (제안: 안지산)
@@ -94,7 +94,7 @@
 - [ ] 선순위 보증금이 없으면 `warnings`에 문장 추가
 - [ ] (17시 이후) AI 연동: 타임아웃 5초, 실패하면 템플릿. 키는 `.env`
 - [x] **OCR 엔진 결정: Naver CLOVA OCR** → decision-log D9 기록
-- [ ] `ocr` 패키지에 `POST /api/ocr/registry` (docs/03 5번): `address` + `registry` + `buildingLedger`(선택) multipart
+- [ ] `ocr` 패키지에 `POST /api/ocr/registry` (docs/03 5번): `address` + `registry` + `buildingLedger`(둘 다 필수, D11) multipart, 응답에 `housingType`
 - [ ] 응답은 질문 **10개 전부** `CONFIRMED/UNCONFIRMED`. 판독 못 한 건 `NO`가 아니라 `UNCONFIRMED`
 - [ ] `application.yml`에 업로드 10MB 설정 (`spring.servlet.multipart.max-file-size`, `max-request-size`. 기본 1MB)
 - [ ] 서류·주소는 **저장 금지**(디스크·DB 쓰기 없음), 로그에 이름·주소·파일 내용 금지. 엔진 타임아웃 10초 → 422 `OCR_UNREADABLE`
@@ -123,7 +123,7 @@
 
 ### DB (손호성)
 - [ ] docs/04 DDL을 `db/schema.sql`로
-- [ ] `db/seed.sql`: 질문 10개(설명은 해요체로), 할 일 14개, 링크 URL
+- [ ] `db/seed.sql`: 질문 10개(설명은 해요체로), 할 일 16개, 링크 URL
 - [ ] `db/README.md` 실행 방법 3줄 → **14:00까지 BE 전원 로컬 실행 확인**
 - [ ] 발표용 ERD 그림 1장
 - [ ] **OCR 데모용 가짜 서류 샘플** 케이스 A/B/C: 등기부등본 + 건축물대장 이미지·PDF (실제 사람 이름·주소 금지, "말소사항 미포함" 형태) → `db/samples/`
@@ -164,5 +164,5 @@ docs/AGENTS.md를 첨부하고 시작.
 | FE S2 | "docs/AGENTS.md와 docs/01 1~2절, docs/03 1~2절, docs/06 S2를 읽어. 질문을 섹션 순서대로 하나씩 보여주고 예/아니오/모르겠어요로 답하는 화면과 금액 입력 화면을 만들어줘. 마지막에 POST /api/diagnoses 요청 모양으로 모아줘." |
 | FE S3 | "docs/AGENTS.md와 docs/03 2절, docs/06 S3를 읽어. 진단 응답 JSON으로 결과 화면을 만들어줘. 등급 색, factors 목록, 중개사 질문, 특약 복사 버튼, 면책 문구, warnings 표시가 필요해." |
 | FE S4 | "docs/AGENTS.md와 docs/02, docs/03 4절, docs/06 S4를 읽어. 날짜 입력 → GET /api/schedule 결과를 지난 일/오늘/다가오는 일로 묶어 보여주는 화면을 만들어줘. important=true는 빨간 강조." |
-| DB | "docs/AGENTS.md와 docs/01, docs/02, docs/04를 읽어. 나는 DB 담당이야. docs/04 DDL을 MySQL 8에 맞게 확인하고, docs/01 질문 10개(설명은 해요체로)와 docs/02 할 일 14개를 seed.sql로 만들어줘." |
+| DB | "docs/AGENTS.md와 docs/01, docs/02, docs/04를 읽어. 나는 DB 담당이야. docs/04 DDL을 MySQL 8에 맞게 확인하고, docs/01 질문 10개(설명은 해요체로)와 docs/02 할 일 16개를 seed.sql로 만들어줘." |
 | QA | "docs/AGENTS.md와 docs/01, docs/03을 읽어. 나는 QA야. 데모 케이스 A/B/C와 입력 오류 케이스로 테스트 시나리오 표를 만들고, 17시 데모 대본을 케이스 B 기준으로 써줘." |
