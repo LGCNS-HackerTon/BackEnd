@@ -48,7 +48,7 @@ flowchart TD
 | 화면 | 경로 | 담당 | 부르는 API | 다음 화면 |
 |---|---|---|---|---|
 | S1 첫 화면 | `/` | FE | 없음 | S2, S4 |
-| S2 진단 (주소 → 첨부 → OCR → 보완 질문 → 금액) | `/diagnosis` | FE | `GET /api/questions`, `POST /api/diagnoses` | S3 |
+| S2 진단 (주소 → 첨부 → OCR → 보완 질문 → 금액) | `/diagnosis` | FE | `POST /api/ocr/registry`, `GET /api/questions`, `POST /api/diagnoses` | S3 |
 | S3 결과 | `/result` | FE | 없음 (S2가 받은 응답을 넘겨받음) | S2, S4 |
 | S4 일정표 | `/schedule` | FE | `GET /api/schedule` | 외부 링크 |
 | 로그인 · 회원가입 (선택) | `/login`, `/signup` | FE·BE | 인증 API(세부 방식 결정 필요) | 이전 화면 또는 S1 |
@@ -111,7 +111,7 @@ sequenceDiagram
     participant DB as DB (MySQL)
 
     U->>FE: 계약할 집 주소 입력 및 관련 서류 첨부
-    FE->>BE: 주소와 서류 전달 (OCR API 계약 별도)
+    FE->>BE: POST /api/ocr/registry (주소 + 서류, docs/03 5번)
     BE->>BE: OCR 추출 및 주소·질문 항목 확인
     BE-->>FE: 확인된 항목과 미확인 항목
     opt 미확인 질문이 있는 경우

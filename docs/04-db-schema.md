@@ -18,20 +18,18 @@ users 1 ──< diagnoses 1 ──< diagnosis_answers >── 1 registry_questio
 checklist_items (혼자, 일정 계산용 원본)
 ```
 
-- 매물 자동 조회용 `properties`, 실거래가 `trade_records`, 위험 요소 `risk_factors`는 **뺐다**. 매물 정보는 사용자가 직접 입력하며 로그인 회원의 진단은 `users`와 연결한다
-- 비로그인 진단도 허용하므로 `diagnoses.user_id`는 `NULL`일 수 있다. 비로그인 기록은 마이페이지에 귀속하지 않는다
+- 매물 자동 조회용 `properties`, 실거래가 `trade_records`, 위험 요소 `risk_factors`는 뺐다. 로그인 회원의 진단은 `users`와 연결한다
 - `DEBT_RATIO`와 공통 안내(`commonAdvice`) 문구는 질문이 아니라서 DB 대신 **BE 코드 상수**로 둔다 (원본은 docs/01 4절)
 
 ## DDL
 
 ```sql
 CREATE TABLE users (
-    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
-    email           VARCHAR(255) NOT NULL,
-    password_hash   VARCHAR(255) NOT NULL,
-    name            VARCHAR(50)  NOT NULL,
-    created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uk_users_email (email)
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    name VARCHAR(50) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE registry_questions (
@@ -62,8 +60,8 @@ CREATE TABLE checklist_items (
 
 CREATE TABLE diagnoses (
     id              BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id         BIGINT       NULL,                 -- 비로그인 진단은 NULL
-    property_name   VARCHAR(100) NULL,                 -- 마이페이지에서 구분할 매물 별칭
+    user_id         BIGINT       NULL,
+    property_name   VARCHAR(100) NULL,
     deposit         INT          NOT NULL,             -- 만원
     sale_price      INT          NOT NULL,             -- 만원
     mortgage_max    INT          NOT NULL DEFAULT 0,   -- 만원
@@ -91,10 +89,20 @@ CREATE TABLE diagnosis_answers (
 );
 ```
 
+## 저장하지 않는 데이터
+
+| 데이터 | 이유 |
+| --- | --- |
+| OCR 서류(등기부등본, 건축물대장 파일) | 소유자 이름 등 개인정보 (docs/08 NFR-06, D6). 메모리에서 처리 후 폐기 |
+| OCR 요청 주소, 소유자 이름, OCR 근거 문장 | 같은 이유. OCR API 응답으로만 쓰고 끝 |
+| 비로그인 진단의 회원 귀속 | 계정이 없으므로 `diagnoses.user_id = NULL`. 마이페이지에서는 조회·수정하지 않음 |
+
+OCR 원본 서류는 저장하지 않는다. 로그인 회원의 진단 원본 입력과 답변은 `users`에 연결해 마이페이지에서 수정·재평가할 수 있게 한다.
+
 ## DB 담당이 할 일
 
 1. 위 DDL로 로컬 DB 만들기, 실행 방법을 `db/README.md`에 3줄로 적기
 2. `db/seed.sql`: docs/01 질문 10개, docs/02 할 일 14개를 그대로 INSERT
 3. QA와 함께 데모 케이스 A/B/C가 들어간 상태로 확인
-4. 로그인 회원의 진단 저장·수정·재검토 후 금액, 답변, 점수, 등급이 함께 갱신되는지 확인
-5. 발표용 ERD 그림 1장 (위 관계도 기준)
+4. 발표용 ERD 그림 1장 (위 관계도 기준)
+5. OCR 데모용 **가짜 서류 샘플** (케이스 A/B/C, 실제 이름·주소 금지) → `db/samples/` (docs/09)
