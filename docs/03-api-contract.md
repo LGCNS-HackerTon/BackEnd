@@ -1,8 +1,8 @@
-# 첫 전세 가이드 API 명세서
+# 전세역전 API 명세서
 
-첫 전세 계약 가이드 · LG CNS AM Inspire 6기 해커톤 · 1팀 · **FE ↔ BE 계약**
+전세역전 (팀 공감) · LG CNS AM Inspire 6기 해커톤 · 1팀 · **FE ↔ BE 계약**
 
-- 작성자: 이상혁 (팀장) · 작성일: 2026.11.09 · 버전: v1.0 · 기준: docs/01 점수 규칙, docs/02 일정 규칙, docs/08 요구사항
+- 작성자: 이상혁 (팀장) · 작성일: 2026.11.09 · 버전: v1.1 · 기준: docs/01 점수 규칙, docs/02 일정 규칙, docs/08 요구사항
 - 바꾸려면 **계약 변경 요청 이슈**부터 올리고 이 문서를 먼저 고친 뒤 코드를 고친다. 맨 아래 변경 이력에 적기
 - FE는 BE가 완성되기 전까지 이 문서의 예시 JSON을 Mock으로 쓴다
 
@@ -10,12 +10,12 @@
 
 | 항목 | 내용 |
 | --- | --- |
-| 범위 | API 4개 = P0 3개(질문 조회, 진단, 일정표) + P2 1개(진단 다시 보기) |
+| 범위 | API 5개 = P0 3개(질문 조회, 진단, 일정표) + P1 1개(등기부 OCR) + P2 1개(진단 다시 보기) |
 | 호출 주소 | `http://localhost:8080/api/...` (FE는 `VITE_API_BASE_URL`로 지정) |
-| 형식 | JSON, UTF-8 |
+| 형식 | JSON, UTF-8. **OCR(5번)만 요청이 `multipart/form-data`** |
 | 인증 | **없음.** 모든 API는 로그인 없이 호출한다. 로그인·마이페이지는 프론트 브라우저 저장 데모라 서버 API가 없다 (5장) |
-| 담당 | 공통 규칙·에러 형식·CORS 문한일(BE3) · 진단 송석주(BE1), 결과 문구 최다인(BE2) · 질문·일정표 문한일(BE3) |
-| 요구사항 | docs/08-requirements.md의 ID(DG, RS, SC)를 API마다 표기 |
+| 담당 | 공통 규칙·에러 형식·CORS 문한일(BE3) · 진단 송석주(BE1), 결과 문구 최다인(BE2) · 질문·일정표 문한일(BE3) · OCR 최다인(BE2) |
+| 요구사항 | docs/08-requirements.md의 ID(DG, OC, RS, SC)를 API마다 표기 |
 
 ## 2. 공통 규칙
 
@@ -46,6 +46,7 @@
 | --- | --- | --- | --- |
 | `INVALID_INPUT` | 400 | 입력값이 규칙에 안 맞음, JSON 형식 오류, 없는 enum 값, 날짜 형식 오류 | 문제 필드 이름 (없으면 `null`) |
 | `NOT_FOUND` | 404 | 없는 진단 id | `null` |
+| `OCR_UNREADABLE` | 422 | 사진에서 등기부 글자를 읽지 못함, OCR 엔진 실패·시간 초과 | `null` |
 | `INTERNAL_ERROR` | 500 | 처리 못 한 서버 오류. 내부 메시지는 숨긴다 | `null` |
 
 ## 3. API 목록
@@ -56,6 +57,7 @@
 | 2 | 진단 | 진단하기 | POST | `/api/diagnoses` | P0 | 송석주, 최다인 | DG-07~11, RS-01~07 |
 | 3 | 진단 | 진단 결과 다시 보기 | GET | `/api/diagnoses/{id}` | P2 | 송석주 | RS-09 |
 | 4 | 일정표 | 계약 일정표 | GET | `/api/schedule` | P0 | 문한일 | SC-01~05 |
+| 5 | 진단 | 등기부 OCR (답 미리 채우기) | POST | `/api/ocr/registry` | P1 | 최다인 | OC-01~05 |
 
 ## 4. API 상세
 
@@ -376,7 +378,73 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 | `INVALID_INPUT` | 400 | 날짜 순서가 거꾸로 | `balanceDate` 또는 `moveInDate` |
 | `INVALID_INPUT` | 400 | `termMonths`가 1 미만 | `termMonths` |
 
-## 5. 서버 API가 없는 기능 (프론트 데모)
+---
+
+### 5. [진단] 등기부 OCR (답 미리 채우기)
+
+`POST /api/ocr/registry` · 인증 없음 · **P1** · 담당 최다인 · OC-01~05 · 결정 D6 · 팀 안내 docs/09
+
+| 항목 | 내용 |
+| --- | --- |
+| 기능 | 등기부 사진·PDF에서 질문 7개의 답과 채권최고액 합계를 **제안**한다. 점수는 계산하지 않는다 (점수는 2번 API만) |
+| 엔진 | BE2가 정한다 (docs/09 5절 후보, decision-log D9). 엔진이 바뀌어도 이 응답 모양은 같다 |
+| 개인정보 | 파일은 **저장하지 않는다** (메모리 처리 후 폐기). 응답·로그에 소유자 이름을 남기지 않는다 (`evidence`에서 이름은 `○○○`로 가림) |
+| 시간 | 엔진 호출 타임아웃 10초. 넘으면 422 `OCR_UNREADABLE` |
+| 화면 | S2 준비 다음 [등기부 사진 올리기] (선택). 응답으로 질문 답을 미리 채우고 사용자가 확인한다 |
+
+#### Request — `multipart/form-data`
+
+| 필드 | 타입 | 필수 | 규칙 |
+| --- | --- | --- | --- |
+| `file` | file | ✅ | JPG · PNG · PDF 1개, 10MB 이하. 등기부 **"말소사항 미포함"** 발급본을 권장 |
+
+```
+POST /api/ocr/registry
+Content-Type: multipart/form-data; boundary=...
+
+file=@registry.pdf
+```
+
+#### Response Body — HTTP 200
+
+| 필드 | 타입 | 설명 |
+| --- | --- | --- |
+| `suggestions` | array | 판단한 질문만 들어간다 (최대 7개). 못 판단한 질문은 **빠진다** → 사용자가 직접 답 |
+| `suggestions[].code` | string | `T2_USAGE`, `A2_RECENT_OWNER`, `A3_TRUST`, `A4_SEIZURE`, `B1_MORTGAGE`, `B2_LEASE_REG`, `B3_JEONSE_RIGHT` 중 하나 |
+| `suggestions[].answer` | string | `YES` / `NO` (OCR은 `UNKNOWN`을 내지 않는다. 모르면 항목을 빼거나 `LOW`) |
+| `suggestions[].confidence` | string | `HIGH` / `LOW`. `LOW`면 FE는 답을 비워 두고 "확인이 필요해요" 표시 |
+| `suggestions[].evidence` | string | 근거 문장 (사용자에게 보여줌, 이름은 가림) |
+| `mortgageMax` | int \| null | 근저당 채권최고액 합계 (만원, 말소 안 된 것만). 근저당이 없거나 못 읽으면 `null` |
+| `warnings` | string[] | 예: `"을구를 읽지 못했어요. 을구 질문은 직접 답해 주세요."` |
+
+`T1_ADDRESS`, `A1_OWNER`(계약 상대와 비교해야 함), `R1_VIOLATION`(건축물대장 정보)은 **제안하지 않는다.**
+
+```json
+{
+  "suggestions": [
+    { "code": "T2_USAGE", "answer": "NO", "confidence": "HIGH", "evidence": "표제부 건물내역: 제2종근린생활시설" },
+    { "code": "A2_RECENT_OWNER", "answer": "YES", "confidence": "HIGH", "evidence": "갑구 3번 소유권이전 2026년9월1일 접수 (○○○)" },
+    { "code": "A3_TRUST", "answer": "NO", "confidence": "HIGH", "evidence": "갑구에 신탁 기록 없음" },
+    { "code": "A4_SEIZURE", "answer": "NO", "confidence": "HIGH", "evidence": "갑구에 압류·가압류·가처분·가등기·경매 기록 없음" },
+    { "code": "B1_MORTGAGE", "answer": "YES", "confidence": "HIGH", "evidence": "을구 1번 근저당권설정 채권최고액 금36,000,000원" },
+    { "code": "B2_LEASE_REG", "answer": "NO", "confidence": "HIGH", "evidence": "을구에 주택임차권 기록 없음" },
+    { "code": "B3_JEONSE_RIGHT", "answer": "NO", "confidence": "LOW", "evidence": "을구 2번 일부를 읽지 못함" }
+  ],
+  "mortgageMax": 3600,
+  "warnings": []
+}
+```
+
+위 예시는 데모 케이스 B 등기부다. FE는 이 값으로 답을 채우고, 사용자가 확인을 끝내면 지금처럼 2번 API로 진단한다.
+
+#### 에러
+
+| code | HTTP | 상황 | field |
+| --- | --- | --- | --- |
+| `INVALID_INPUT` | 400 | 파일 없음, 형식이 JPG·PNG·PDF가 아님, 10MB 초과 | `file` |
+| `OCR_UNREADABLE` | 422 | 글자를 읽지 못함, 등기부가 아님, 엔진 실패·시간 초과 → FE는 "직접 답하기"로 진행 | `null` |
+
+## 6. 서버 API가 없는 기능 (프론트 데모)
 
 | 기능 | 저장 위치 | 비고 |
 | --- | --- | --- |
@@ -392,3 +460,4 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 | --- | --- | --- | --- |
 | v0.1 | 11/9 | 초안 (예시 JSON 중심) | 이상혁 |
 | v1.0 | 11/9 | 명세서 형식으로 정리: 공통 규칙, API 목록, 필드 표, 에러 표, 요구사항 ID, 프론트 데모 기능. API 모양은 v0.1과 같음 | 이상혁 |
+| v1.1 | 11/9 | 강사님 피드백 반영 (D6): 5번 등기부 OCR API 추가, 에러 `OCR_UNREADABLE` 추가. 1~4번은 변경 없음 | 이상혁 |

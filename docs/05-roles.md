@@ -12,14 +12,14 @@
 | 2 | **계약 일정표**: 날짜 입력 → D-day 할 일 14개 | BE3, FE | ✅ 실제 구현 |
 | + | AI 쉬운 말 설명 | BE2 | 🟡 오늘은 템플릿. **AI는 17시 이후 / 내일 오전** |
 
-**오늘 안 만드는 것**: AI 호출, 공유 링크(`GET /api/diagnoses/{id}`), 로그인, OCR, 실거래가 API. 누가 "이것도 넣자" 하면 decision-log에 적어두고 내일 판단.
+**오늘 안 만드는 것**: AI 호출, 공유 링크(`GET /api/diagnoses/{id}`), 실거래가 API, 블랙리스트. **OCR은 오늘 FE Mock, 실제 연동은 내일 12시 전** ([docs/09](09-feedback-ocr.md)). 누가 "이것도 넣자" 하면 decision-log에 적어두고 내일 판단.
 
 ## 2. 역할표
 
 | 역할 | 이름 | 맡는 것 | 담당 위치 | 17:00까지 결과물 |
 |---|---|---|---|---|
 | **팀장 + FE 드라이버** | 이상혁 | 결정 마무리, PR 머지, 16:00 통합 진행 + **화면 4개 직접 개발** | FrontEnd 전체 | 화면 4개 동작, 17:00 데모 |
-| **FE 리뷰어** | 안지산, 탁유진, 임수경 | 드라이버가 만든 화면을 보고 **첨삭**(문구, 흐름, 빠진 것), 아래 3절 할 일 | FrontEnd PR 리뷰 | 화면별 수정 요청 목록, 3절 결과물 |
+| **FE 리뷰어** | 레퍼런스 임수경·탁유진, 순서도·발표 안지산 | 드라이버가 만든 화면을 보고 **첨삭**(문구, 흐름, 빠진 것), 아래 3절 할 일 | FrontEnd PR 리뷰 | 화면별 수정 요청 목록, 3절 결과물 |
 | **BE1** 진단 | 송석주 | `POST /api/diagnoses` + **점수 계산 로직** + 테스트 | BackEnd `diagnosis` | 데모 케이스 A/B/C = 0·70·40점 |
 | **BE2** 결과 문구 | 최다인 | docs/01 4절 템플릿 → 코드 상수, `factors`·`commonAdvice`·템플릿 `aiExplanation`, BE1 지원. 17시 이후 AI 연동 | BackEnd `diagnosis.advice` | 진단 응답에 질문·특약 문구가 채워짐 |
 | **BE3** 뼈대·일정 | 문한일 | 프로젝트 뼈대(에러 형식, CORS), `GET /api/questions`, `GET /api/schedule` | BackEnd `common`, `question`, `schedule` | 13:40까지 뼈대 PR, API 2개 동작 |
