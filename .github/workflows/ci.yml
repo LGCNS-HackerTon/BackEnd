@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: jeonse
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -proot"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      DB_URL: jdbc:mysql://localhost:3306/jeonse
+      DB_USERNAME: root
+      DB_PASSWORD: root
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check project
+        id: project
+        run: |
+          if [ -f gradlew ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "No Gradle project yet, skipping build."
+          fi
+
+      - uses: actions/setup-java@v4
+        if: steps.project.outputs.exists == 'true'
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        if: steps.project.outputs.exists == 'true'
+
+      - name: Load schema and seed
+        if: steps.project.outputs.exists == 'true'
+        run: |
+          for f in db/schema.sql db/seed.sql; do
+            if [ -f "$f" ]; then
+              mysql -h 127.0.0.1 -uroot -proot jeonse < "$f"
+              echo "loaded $f"
+            fi
+          done
+
+      - name: Build and test
+        if: steps.project.outputs.exists == 'true'
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon

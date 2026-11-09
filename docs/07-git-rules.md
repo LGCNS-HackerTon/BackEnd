@@ -114,6 +114,15 @@ push하면 GitHub에 **Compare & pull request** 버튼이 뜬다. 눌러서 템�
 | 머지 | **팀장이** Squash and merge. 오늘은 리뷰보다 속도라 훑어보고 문제없으면 바로 |
 | 크기 | 파일 10개 넘으면 쪼개기 |
 
+### PR에 자동으로 달리는 것
+| 이름 | 무엇 | 어떻게 대응 |
+|---|---|---|
+| **CI** (GitHub Actions) | BackEnd: Gradle 빌드 + 테스트 (MySQL 포함) / FrontEnd: 설치 + lint + 빌드 | ❌ 빨간불이면 **고치고 다시 push.** 로그는 PR 아래 Details |
+| **CodeRabbit** | PR마다 자동 코드 리뷰 댓글 (한국어) | 참고용. 반영할지는 본인이 판단. 질문은 댓글에 `@coderabbitai` 붙여서 |
+| **디스코드 알림** | PR·이슈·push가 팀 채널에 올라옴 | 내 PR이 머지됐는지 여기서 확인 |
+
+- CodeRabbit의 **"커밋 제안 적용", `@coderabbitai generate ...` 기능은 쓰지 않는다.** 봇 이름이 커밋·기여자에 남아. 고칠 내용은 직접 고쳐서 커밋한다
+
 ### 머지된 다음
 ```bash
 git switch main
