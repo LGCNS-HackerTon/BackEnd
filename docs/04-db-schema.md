@@ -3,26 +3,35 @@
 > 상태: **초안, MySQL 기준**. DB 스택이 바뀌면 타입만 바꾸고 테이블·컬럼 이름은 유지한다 (BE 코드와 맞물리니까).
 > 담당: DB. 컬럼을 바꾸면 BE에게 먼저 알리기.
 
-## 테이블 4개 한눈에 보기
+## 테이블 5개 한눈에 보기
 
 | 테이블 | 역할 | 데이터는 누가 넣나 |
 |---|---|---|
+| `users` | 선택 로그인 회원과 진단 기록 소유자 | 회원가입 API가 저장 |
 | `registry_questions` | 등기부 질문 10개 + 점수 + 행동 안내 템플릿 | seed (docs/01에서 옮김) |
 | `checklist_items` | 일정표 할 일 14개 | seed (docs/02에서 옮김) |
 | `diagnoses` | 진단 1번 = 1줄. 입력 금액, 점수, 등급, AI 설명 | API가 저장 |
 | `diagnosis_answers` | 진단별 질문 답 10개 | API가 저장 |
 
 ```
-registry_questions 1 ──< diagnosis_answers >── 1 diagnoses
+users 1 ──< diagnoses 1 ──< diagnosis_answers >── 1 registry_questions
 checklist_items (혼자, 일정 계산용 원본)
 ```
 
-- 회원(`users`), 매물(`properties`), 실거래가(`trade_records`), 위험 요소(`risk_factors`)는 **뺐다**. 위험 요소는 `diagnosis_answers.score`와 `diagnoses.debt_ratio`로 다시 계산할 수 있다
+- 매물 자동 조회용 `properties`, 실거래가 `trade_records`, 위험 요소 `risk_factors`는 뺐다. 로그인 회원의 진단은 `users`와 연결한다
 - `DEBT_RATIO`와 공통 안내(`commonAdvice`) 문구는 질문이 아니라서 DB 대신 **BE 코드 상수**로 둔다 (원본은 docs/01 4절)
 
 ## DDL
 
 ```sql
+CREATE TABLE users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    name VARCHAR(50) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE registry_questions (
     code            VARCHAR(30)  PRIMARY KEY,          -- T1_ADDRESS 등 (docs/01)
     section         VARCHAR(10)  NOT NULL,             -- TITLE, GAPGU, EULGU, BUILDING
@@ -51,6 +60,8 @@ CREATE TABLE checklist_items (
 
 CREATE TABLE diagnoses (
     id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id         BIGINT       NULL,
+    property_name   VARCHAR(100) NULL,
     deposit         INT          NOT NULL,             -- 만원
     sale_price      INT          NOT NULL,             -- 만원
     mortgage_max    INT          NOT NULL DEFAULT 0,   -- 만원
@@ -61,7 +72,9 @@ CREATE TABLE diagnoses (
     risk_grade      VARCHAR(10)  NOT NULL,             -- SAFE, CAUTION, DANGER
     ai_explanation  TEXT         NOT NULL,             -- AI 실패 시 템플릿 문장
     ai_used         BOOLEAN      NOT NULL,
-    created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE diagnosis_answers (
@@ -82,9 +95,9 @@ CREATE TABLE diagnosis_answers (
 | --- | --- |
 | OCR 서류(등기부등본, 건축물대장 파일) | 소유자 이름 등 개인정보 (docs/08 NFR-06, D6). 메모리에서 처리 후 폐기 |
 | OCR 요청 주소, 소유자 이름, OCR 근거 문장 | 같은 이유. OCR API 응답으로만 쓰고 끝 |
-| 계정·마이페이지 기록 | 브라우저 저장 데모 (D3-2). 서버 테이블 없음 |
+| 비로그인 진단 | 결과만 응답하고 DB에는 저장하지 않음 |
 
-그래서 OCR이 들어와도 **테이블은 그대로 4개**다. 진단 결과는 지금처럼 `diagnoses`, `diagnosis_answers`에 금액과 답만 저장한다.
+OCR 원본 서류는 저장하지 않는다. 로그인 회원의 진단 원본 입력과 답변은 `users`에 연결해 마이페이지에서 수정·재평가할 수 있게 한다.
 
 ## DB 담당이 할 일
 
