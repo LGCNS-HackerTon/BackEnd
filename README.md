@@ -43,8 +43,10 @@ PR마다 CI가 `./gradlew build`(테스트 포함)를 실행합니다. CI는 MyS
 | 6 | POST | `/api/auth/signup` | 회원가입 (JWT 발급) | P1 | 문한일 | `domain.member` |
 | 7 | POST | `/api/auth/login` | 로그인 (JWT 발급) | P1 | 문한일 | `domain.member` |
 | 8 | GET | `/api/members/me` | 내 정보 (토큰 필수) | P1 | 문한일 | `domain.member` |
+| 9 | GET | `/api/members/me/diagnoses` | 내 진단 기록 최근 5건, 오래된 순 (토큰 필수) | P1 | 송석주 | `domain.diagnosis` |
+| 10 | PUT | `/api/members/me/diagnoses/{id}` | 진단 기록 재평가, 같은 기록 덮어쓰기 (토큰 필수) | P1 | 송석주 | `domain.diagnosis` |
 
-9·10번(내 진단 기록, 재평가)과 2번의 로그인 회원 저장은 docs/03 6장 계약만 확정했고 진단 구현과 함께 붙입니다. 로그인 회원 id가 필요한 API는 파라미터에 `@LoginMember Long memberId`(`global.security`)를 붙이고, 토큰이 선택이면 `@LoginMember(required = false)`를 씁니다.
+2번은 토큰이 있으면 그 회원 기록으로 저장합니다. 데모 계정 `demo@example.com`(비밀번호 `DEMO_PASSWORD`, 기본 `jeonse-demo-2026`)은 서버 시작 때 없으면 만듭니다. 로그인 회원 id가 필요한 API는 파라미터에 `@LoginMember Long memberId`(`global.security`)를 붙이고, 토큰이 선택이면 `@LoginMember(required = false)`를 씁니다.
 
 공통 에러, 예외 처리, CORS는 `global` 패키지(문한일)에 둡니다. 기능 코드는 `domain/<기능>/{controller,service,repository,entity,dto}`로 나눕니다 (docs/AGENTS.md).
 

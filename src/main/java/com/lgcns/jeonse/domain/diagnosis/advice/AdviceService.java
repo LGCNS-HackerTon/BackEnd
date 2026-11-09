@@ -75,7 +75,7 @@ public class AdviceService {
         };
     }
 
-    static String label(RiskGrade grade) {
+    public static String label(RiskGrade grade) {
         return switch (grade) { case SAFE -> "안전"; case CAUTION -> "주의"; case DANGER -> "위험"; };
     }
 

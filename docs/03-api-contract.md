@@ -456,6 +456,7 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 | 이메일 | 서버가 앞뒤 공백을 지우고 **소문자로 바꿔** 저장·비교한다 (`Demo@Example.com` = `demo@example.com`) |
 | 비밀번호 | 서버에 **BCrypt 해시로만** 저장한다 (NFR-06). 응답·로그에 넣지 않는다 |
 | Mock 모드 | `VITE_USE_MOCK=true`이면 FE는 지금처럼 브라우저 저장 데모 로그인·기록을 그대로 쓰고 이 API들을 부르지 않는다 |
+| 데모 계정 | 서버 시작 때 없으면 만든다: 이메일 `demo@example.com`, 이름 `데모 사용자`, 비밀번호 `DEMO_PASSWORD` (기본 `jeonse-demo-2026`). 기록은 미리 넣지 않는다. FE "데모 계정으로 시작"은 서버 모드에서 이 계정으로 7번 로그인 |
 
 ### 6.2 API 상세
 
@@ -639,3 +640,4 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 | v1.2 | 11/9 | D11: 3번 `GET /api/diagnoses/{id}` 삭제, 5번 건축물대장 필수 + `housingType` 추가, 일정표 할 일 16개 | 이상혁 |
 | v1.3 | 11/10 | D10 회원 API 확정: 6~10번(회원가입·로그인·내 정보·내 진단 기록·재평가) 추가, 에러 `UNAUTHORIZED`·`DUPLICATE_EMAIL` 추가, 2번 진단은 토큰이 있을 때만 저장하고 비회원은 `id: null`. 2번 요청·응답 필드 이름은 그대로 | 이상혁 |
 | v1.3 | 11/10 | 최다인 #21 안 반영: 경로 `/api/auth/signup`·`/api/auth/login`, 가입 필드 제한, 담당(회원가입·로그인·JWT·내 정보 문한일 / 진단 저장·기록·재평가 송석주). 기록 개수·정렬은 #21(10건·최신순)이 아니라 현재 FE(5건·오름차순, D10) 기준. 재평가(10번)는 FE에 기능(D8)이 있어 포함 | 이상혁 |
+| v1.3 | 11/10 | 6.1에 데모 계정(`demo@example.com`, 서버 시작 때 생성) 한 줄 추가. API 모양은 그대로 | 송석주 |
