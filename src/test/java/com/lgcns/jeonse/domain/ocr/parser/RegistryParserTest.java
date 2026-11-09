@@ -152,6 +152,15 @@ public class RegistryParserTest {
     }
 
     @Test
+    void 채권최고액에_숫자가_없으면_금액만_null() {
+        String text = fixture("registry-case-b.txt").replace("금36,000,000원", "금,원");
+        OcrResponseDTO r = RegistryParser.parse("서울 가상구 테스트로 12, 101동 1204호", text, fixture("ledger-case-b.txt"), TODAY);
+
+        assertAnswer(r, "B1_MORTGAGE", Status.CONFIRMED, "YES");
+        assertThat(r.mortgageMax()).isNull();
+    }
+
+    @Test
     void 위반건축물_표시가_있으면_YES() {
         String ledger = fixture("ledger-case-b.txt").replace("집합건축물대장(전유부, 갑)", "위반건축물\n집합건축물대장(전유부, 갑)");
         OcrResponseDTO r = RegistryParser.parse("서울 가상구 테스트로 12, 101동 1204호", fixture("registry-case-b.txt"), ledger, TODAY);
@@ -178,6 +187,16 @@ public class RegistryParserTest {
 
         assertAnswer(r, "R1_VIOLATION", Status.UNCONFIRMED, null);
         assertThat(r.housingType()).isNull();
+    }
+
+    @Test
+    void 건축물대장_도로명주소가_다르면_쓰지_않는다() {
+        String ledger = fixture("ledger-case-b.txt").replace("테스트로 12", "다른로 99");
+        OcrResponseDTO r = RegistryParser.parse("서울 가상구 테스트로 12, 101동 1204호", fixture("registry-case-b.txt"), ledger, TODAY);
+
+        assertAnswer(r, "R1_VIOLATION", Status.UNCONFIRMED, null);
+        assertThat(r.housingType()).isNull();
+        assertThat(r.warnings()).contains("건축물대장의 주소·호수가 입력한 주소와 달라요. 용도·위반건축물 질문은 직접 답해 주세요.");
     }
 
     @Test

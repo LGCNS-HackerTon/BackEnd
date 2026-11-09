@@ -30,7 +30,7 @@ public final class RegistryParser {
     // "1번근저당권설정등기말소"처럼 앞 순위번호를 지우는 기록. 빨간 줄은 OCR이 못 보지만 이 기록은 글자로 남는다.
     private static final Pattern CANCEL_REF = Pattern.compile("(\\d{1,3}(?:-\\d{1,3})?)번[가-힣]{0,20}?말소");
     private static final Pattern DATE = Pattern.compile("(\\d{4})년(\\d{1,2})월(\\d{1,2})일");
-    private static final Pattern MAX_AMOUNT = Pattern.compile("채권최고액금?([\\d,]+)원");
+    private static final Pattern MAX_AMOUNT = Pattern.compile("채권최고액금?(\\d[\\d,]{0,14})원");
     private static final Pattern OWNER = Pattern.compile("소유자\\s*([가-힣]{2,5})(?![가-힣])");
     private static final Pattern HO = Pattern.compile("(?<![\\d-])(?:제\\s*)?(\\d{1,5})\\s*호(?![가-힣])");
     private static final Pattern DONG = Pattern.compile("(?<![\\d가-힣])(?:제\\s*)?(\\d{1,4})\\s*동(?![가-힣])");
@@ -75,8 +75,9 @@ public final class RegistryParser {
         Set<String> ledgerHos = ledgerText == null ? Set.of() : hos(ledgerText);
         if (ledgerText == null || !compact(ledgerText).contains("건축물대장")) {
             warnings.add(MISSING_LEDGER);
-        } else if (input.ho != null && !ledgerHos.isEmpty() && !ledgerHos.contains(input.ho)) {
-            warnings.add("건축물대장의 호수가 입력한 주소와 달라요. 용도·위반건축물 질문은 직접 답해 주세요.");
+        } else if (Boolean.FALSE.equals(sameBase(input.text, ledgerText))
+                || (input.ho != null && !ledgerHos.isEmpty() && !ledgerHos.contains(input.ho))) {
+            warnings.add("건축물대장의 주소·호수가 입력한 주소와 달라요. 용도·위반건축물 질문은 직접 답해 주세요.");
         } else {
             ledger = compact(ledgerText);
         }
@@ -284,8 +285,8 @@ public final class RegistryParser {
         }
         Answer answer = confirmed("B1_MORTGAGE", "YES", String.join(", ", shown.values()));
         if (amounts.containsValue(null)) return new Mortgage(answer, null);
-        long won = amounts.values().stream().mapToLong(Long::longValue).sum();
-        return new Mortgage(answer, (int) ((won + 9_999) / 10_000)); // 만원 미만은 올림 (빚을 적게 보지 않도록)
+        long man = (amounts.values().stream().mapToLong(Long::longValue).sum() + 9_999) / 10_000; // 만원 미만은 올림 (빚을 적게 보지 않도록)
+        return new Mortgage(answer, man > Integer.MAX_VALUE ? null : (int) man); // 말이 안 되게 큰 값은 못 읽은 것으로 본다
     }
 
     // ---- 텍스트 구조 ----
