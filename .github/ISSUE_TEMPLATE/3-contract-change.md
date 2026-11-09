@@ -1,7 +1,7 @@
 ---
 name: 계약 변경 요청
 about: API 모양(docs/03)이나 DB 테이블(docs/04), 점수 규칙(docs/01)을 바꾸고 싶을 때
-title: "[계약] 무엇을 바꾸나"
+title: "docs : [역할] 계약 변경 - 무엇을 바꾸나"
 labels: documentation
 assignees: ''
 ---
