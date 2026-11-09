@@ -3,26 +3,37 @@
 > 상태: **초안, MySQL 기준**. DB 스택이 바뀌면 타입만 바꾸고 테이블·컬럼 이름은 유지한다 (BE 코드와 맞물리니까).
 > 담당: DB. 컬럼을 바꾸면 BE에게 먼저 알리기.
 
-## 테이블 4개 한눈에 보기
+## 테이블 5개 한눈에 보기
 
 | 테이블 | 역할 | 데이터는 누가 넣나 |
 |---|---|---|
+| `users` | 선택 로그인 회원과 진단 기록 소유자 | 회원가입 API가 저장 |
 | `registry_questions` | 등기부 질문 10개 + 점수 + 행동 안내 템플릿 | seed (docs/01에서 옮김) |
 | `checklist_items` | 일정표 할 일 14개 | seed (docs/02에서 옮김) |
 | `diagnoses` | 진단 1번 = 1줄. 입력 금액, 점수, 등급, AI 설명 | API가 저장 |
 | `diagnosis_answers` | 진단별 질문 답 10개 | API가 저장 |
 
 ```
-registry_questions 1 ──< diagnosis_answers >── 1 diagnoses
+users 1 ──< diagnoses 1 ──< diagnosis_answers >── 1 registry_questions
 checklist_items (혼자, 일정 계산용 원본)
 ```
 
-- 회원(`users`), 매물(`properties`), 실거래가(`trade_records`), 위험 요소(`risk_factors`)는 **뺐다**. 위험 요소는 `diagnosis_answers.score`와 `diagnoses.debt_ratio`로 다시 계산할 수 있다
+- 매물 자동 조회용 `properties`, 실거래가 `trade_records`, 위험 요소 `risk_factors`는 **뺐다**. 매물 정보는 사용자가 직접 입력하며 로그인 회원의 진단은 `users`와 연결한다
+- 비로그인 진단도 허용하므로 `diagnoses.user_id`는 `NULL`일 수 있다. 비로그인 기록은 마이페이지에 귀속하지 않는다
 - `DEBT_RATIO`와 공통 안내(`commonAdvice`) 문구는 질문이 아니라서 DB 대신 **BE 코드 상수**로 둔다 (원본은 docs/01 4절)
 
 ## DDL
 
 ```sql
+CREATE TABLE users (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    email           VARCHAR(255) NOT NULL,
+    password_hash   VARCHAR(255) NOT NULL,
+    name            VARCHAR(50)  NOT NULL,
+    created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_users_email (email)
+);
+
 CREATE TABLE registry_questions (
     code            VARCHAR(30)  PRIMARY KEY,          -- T1_ADDRESS 등 (docs/01)
     section         VARCHAR(10)  NOT NULL,             -- TITLE, GAPGU, EULGU, BUILDING
@@ -51,6 +62,8 @@ CREATE TABLE checklist_items (
 
 CREATE TABLE diagnoses (
     id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id         BIGINT       NULL,                 -- 비로그인 진단은 NULL
+    property_name   VARCHAR(100) NULL,                 -- 마이페이지에서 구분할 매물 별칭
     deposit         INT          NOT NULL,             -- 만원
     sale_price      INT          NOT NULL,             -- 만원
     mortgage_max    INT          NOT NULL DEFAULT 0,   -- 만원
@@ -61,7 +74,9 @@ CREATE TABLE diagnoses (
     risk_grade      VARCHAR(10)  NOT NULL,             -- SAFE, CAUTION, DANGER
     ai_explanation  TEXT         NOT NULL,             -- AI 실패 시 템플릿 문장
     ai_used         BOOLEAN      NOT NULL,
-    created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE diagnosis_answers (
@@ -81,4 +96,5 @@ CREATE TABLE diagnosis_answers (
 1. 위 DDL로 로컬 DB 만들기, 실행 방법을 `db/README.md`에 3줄로 적기
 2. `db/seed.sql`: docs/01 질문 10개, docs/02 할 일 14개를 그대로 INSERT
 3. QA와 함께 데모 케이스 A/B/C가 들어간 상태로 확인
-4. 발표용 ERD 그림 1장 (위 관계도 기준)
+4. 로그인 회원의 진단 저장·수정·재검토 후 금액, 답변, 점수, 등급이 함께 갱신되는지 확인
+5. 발표용 ERD 그림 1장 (위 관계도 기준)

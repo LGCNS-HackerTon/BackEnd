@@ -1,4 +1,4 @@
-# 1팀 프로젝트 공통 컨텍스트 (모든 AI가 먼저 읽는 파일)
+# 공감 팀 프로젝트 공통 컨텍스트 (모든 AI가 먼저 읽는 파일)
 
 > **팀원에게**: AI(Claude, ChatGPT, Cursor 등)에게 일을 시킬 때 **이 파일(`docs/AGENTS.md`)을 먼저 첨부하거나 붙여넣고** 시작해.
 > Claude Code는 저장소 맨 위 `CLAUDE.md`를 통해 자동으로 읽어. 다른 도구는 이 파일을 직접 첨부해.
@@ -6,7 +6,7 @@
 
 ## 1. 프로젝트 한 줄 요약
 
-**첫 전세 계약 가이드** (공공 + 금융). 사회초년생이 계약할 집 주소와 관련 서류를 제출하고 OCR로 확인되지 않은 질문에 답하면 → 위험 신호를 쉬운 말로 알려주고 → 중개사에게 물어볼 질문, 계약서 특약 문구, 계약 일정표(D-day 할 일)까지 안내한다.
+**전세역전** — 공감 팀의 첫 전세 계약 가이드 (공공 + 금융). 사회초년생이 계약할 집 주소와 관련 서류를 제출하고 OCR로 확인되지 않은 질문에 답하면 → 위험 신호를 쉬운 말로 알려주고 → 중개사에게 물어볼 질문, 계약서 특약 문구, 계약 일정표(D-day 할 일)까지 안내한다.
 
 - 타겟: 처음 전세 계약을 하는 20~30대 사회초년생
 - 포지션: HUG 안심전세 앱, 인터넷등기소 같은 **기존 서비스로 이어주는 입문 가이드** (경쟁자가 아님)
@@ -31,6 +31,7 @@
 | `schedule` | BE3 | `GET /api/schedule`, `checklist_items` 엔티티 |
 | `diagnosis` | BE1 | `POST /api/diagnoses`, 점수 계산, `diagnoses`·`diagnosis_answers` 엔티티 |
 | `diagnosis.advice` | BE2 | 결과 문구(factors, commonAdvice, 템플릿 설명) |
+| `auth`, `member` | 담당 결정 필요 | 선택 로그인·회원가입, 마이페이지 진단 기록 조회·수정 권한 |
 
 각 패키지 안은 `Controller` / `Service` / `Repository` / 엔티티 / `dto`로 나눈다.
 
@@ -44,6 +45,8 @@
 | `src/pages/Diagnosis/` | FE | S2 진단 `/diagnosis` |
 | `src/pages/Result/` | FE | S3 결과 `/result` |
 | `src/pages/Schedule/` | FE | S4 일정표 `/schedule` |
+| `src/pages/Auth/` | 담당 결정 필요 | 선택 로그인·회원가입 `/login`, `/signup` |
+| `src/pages/MyPage/` | 담당 결정 필요 | S5 진단 기록 조회·수정·재검토 `/mypage` |
 
 ### 환경 변수 (`.env.example`만 커밋)
 
@@ -63,7 +66,7 @@
 | [docs/01-registry-questions.md](01-registry-questions.md) | 등기부 질문 10개, 점수 규칙, 등급, 행동 안내 템플릿, 데모 케이스 | 전원 |
 | [docs/02-schedule-rules.md](02-schedule-rules.md) | 계약 일정표 D-day 규칙 14개 | BE, FE, DB |
 | [docs/03-api-contract.md](03-api-contract.md) | **API 명세서**: 공통 규칙, API 목록, 요청·응답 필드, 에러 (FE와 BE의 약속) | BE, FE, QA |
-| [docs/04-db-schema.md](04-db-schema.md) | 테이블 4개, DDL 초안 | DB, BE |
+| [docs/04-db-schema.md](04-db-schema.md) | 테이블 5개, DDL 초안 | DB, BE |
 | [docs/06-service-flow.md](06-service-flow.md) | **화면 흐름, 화면 경로**, 화면별 내용, 시스템·에러 흐름 | FE, BE, QA |
 | [docs/05-roles.md](05-roles.md) | 역할 분담, 오늘 시간표, **역할별 체크리스트** | 전원 |
 | [docs/08-requirements.md](08-requirements.md) | **요구사항 명세서**: 기능 34개·비기능 10개, 우선순위(P0/P1/P2), 담당 | 전원 |
@@ -101,7 +104,7 @@
 | 계약 일정표 | ✅ 실제 구현 |
 | AI 쉬운 말 설명 | 🟡 **오늘(11/9)은 템플릿 문장만.** AI 연동은 17시 이후 / 내일 오전 |
 | 시세 | 🟡 사용자가 직접 입력 |
-| 로그인·마이페이지 진단 기록 | 🟡 브라우저 저장 데모 (서버 인증·DB 없음) |
+| 선택 로그인·마이페이지 진단 기록 | 🟡 실제 구현 예정 (로그인 회원은 서버 저장·수정·재검토) |
 | 서류 OCR 및 보완 질문 | 문서 개정 초안 · 미구현 |
 | 실거래가 API | ❌ 미구현 |
 
