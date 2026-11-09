@@ -2,7 +2,7 @@
 
 전세역전 (팀 공감) · LG CNS AM Inspire 6기 해커톤 · 1팀 · **FE ↔ BE 계약**
 
-- 작성자: 이상혁 (팀장) · 작성일: 2026.11.09 · 버전: v1.1 · 기준: docs/01 점수 규칙, docs/02 일정 규칙, docs/08 요구사항
+- 작성자: 이상혁 (팀장) · 작성일: 2026.11.09 · 버전: v1.3 · 기준: docs/01 점수 규칙, docs/02 일정 규칙, docs/08 요구사항
 - 바꾸려면 **계약 변경 요청 이슈**부터 올리고 이 문서를 먼저 고친 뒤 코드를 고친다. 맨 아래 변경 이력에 적기
 - FE는 BE가 완성되기 전까지 이 문서의 예시 JSON을 Mock으로 쓴다
 
@@ -10,11 +10,11 @@
 
 | 항목 | 내용 |
 | --- | --- |
-| 범위 | API 4개 = P0 3개(질문 조회, 진단, 일정표) + P1 1개(등기부 OCR). 3번(진단 다시 보기)은 삭제 (D11). 회원 API는 6장 |
+| 범위 | API 4개 = P0 3개(질문 조회, 진단, 일정표) + P1 1개(등기부 OCR). 3번(진단 다시 보기)은 삭제 (D11). 회원 API 5개(6~10번, P1)는 6장 |
 | 호출 주소 | `http://localhost:8080/api/...` (FE는 `VITE_API_BASE_URL`로 지정) |
 | 형식 | JSON, UTF-8. **OCR(5번)만 요청이 `multipart/form-data`** |
-| 인증 | 질문·비로그인 진단·일정표는 인증 없이 호출한다. 회원 API는 **JWT Bearer 인증**을 사용한다 |
-| 담당 | 공통 규칙·에러 형식·CORS 문한일(BE3) · 진단 송석주(BE1), 결과 문구 최다인(BE2) · 질문·일정표 문한일(BE3) · OCR 최다인(BE2) |
+| 인증 | 질문·진단·일정표·OCR은 인증 없이 호출한다. 회원 API는 **JWT Bearer 인증**을 사용한다 (6장). 진단(2번)은 로그인 회원이 토큰을 보내면 기록을 저장한다 |
+| 담당 | 공통 규칙·에러 형식·CORS 문한일(BE3) · 진단 송석주(BE1), 결과 문구 최다인(BE2) · 질문·일정표 문한일(BE3) · OCR 최다인(BE2) · 회원가입·로그인·JWT·내 정보 문한일(BE3) · 로그인 회원 진단 저장·내 진단 기록·재평가 송석주(BE1) |
 | 요구사항 | docs/08-requirements.md의 ID(DG, RS, SC)를 API마다 표기 |
 
 ## 2. 공통 규칙
@@ -45,7 +45,9 @@
 | code | HTTP | 상황 | field |
 | --- | --- | --- | --- |
 | `INVALID_INPUT` | 400 | 입력값이 규칙에 안 맞음, JSON 형식 오류, 없는 enum 값, 날짜 형식 오류 | 문제 필드 이름 (없으면 `null`) |
-| `NOT_FOUND` | 404 | 없는 경로 | `null` |
+| `UNAUTHORIZED` | 401 | 로그인 필요한 API에 토큰 없음, 토큰이 잘못됐거나 만료됨, 로그인 실패 (6장) | 로그인 실패는 `password`, 나머지 `null` |
+| `NOT_FOUND` | 404 | 없는 경로, 내 것이 아닌 진단 기록 (6장) | `null` |
+| `DUPLICATE_EMAIL` | 409 | 이미 가입한 이메일로 회원가입 (6장) | `email` |
 | `OCR_UNREADABLE` | 422 | 사진에서 등기부 글자를 읽지 못함, OCR 엔진 실패·시간 초과 | `null` |
 | `INTERNAL_ERROR` | 500 | 처리 못 한 서버 오류. 내부 메시지는 숨긴다 | `null` |
 
@@ -58,6 +60,11 @@
 | 3 | ~~진단~~ | ~~진단 결과 다시 보기~~ | - | ~~`/api/diagnoses/{id}`~~ | **삭제 (D11)** | - | - |
 | 4 | 일정표 | 계약 일정표 | GET | `/api/schedule` | P0 | 문한일 | SC-01~05 |
 | 5 | 진단 | 등기부 OCR (서류로 답 채우기) | POST | `/api/ocr/registry` | P1 | 최다인 | DG-13~15 |
+| 6 | 회원 | 회원가입 | POST | `/api/auth/signup` | P1 | 문한일 | AC-01 |
+| 7 | 회원 | 로그인 | POST | `/api/auth/login` | P1 | 문한일 | AC-01 |
+| 8 | 회원 | 내 정보 | GET | `/api/members/me` | P1 | 문한일 | AC-04 |
+| 9 | 회원 | 내 진단 기록 (최근 5건) | GET | `/api/members/me/diagnoses` | P1 | 송석주 | AC-03, AC-04 |
+| 10 | 회원 | 진단 기록 재평가 (덮어쓰기) | PUT | `/api/members/me/diagnoses/{id}` | P1 | 송석주 | AC-05 |
 
 ## 4. API 상세
 
@@ -129,13 +136,14 @@
 
 ### 2. [진단] 진단하기
 
-`POST /api/diagnoses` · 인증 없음 · P0 · 담당 송석주(점수), 최다인(결과 문구) · DG-07~11, RS-01~07
+`POST /api/diagnoses` · 인증 선택 (6장) · P0 · 담당 송석주(점수), 최다인(결과 문구) · DG-07~11, RS-01~07
 
 | 항목 | 내용 |
 | --- | --- |
-| 기능 | 답 10개와 금액으로 위험 점수·등급을 계산하고, 위험 항목별 안내를 붙여 돌려준다. 진단 1건과 답 10개를 저장한다 |
+| 기능 | 답 10개와 금액으로 위험 점수·등급을 계산하고, 위험 항목별 안내를 붙여 돌려준다. **`Authorization: Bearer` 토큰이 있으면(로그인 회원)** 진단 1건과 답 10개를 그 회원 기록으로 저장한다. 토큰이 없으면 저장하지 않는다 (D10) |
 | 계산 규칙 | docs/01 1~3절 (점수표, 부채비율, 등급) |
-| 데이터 | `diagnoses`, `diagnosis_answers` 저장 · `registry_questions` 읽기 |
+| 데이터 | `diagnoses`, `diagnosis_answers` 저장 (로그인 회원만) · `registry_questions` 읽기 |
+| 헤더 | `Authorization: Bearer <accessToken>` 선택. 없으면 비회원으로 계산만 한다. **있는데 잘못됐거나 만료되면 401 `UNAUTHORIZED`** (6장) |
 | 화면 | S2 금액 입력 → "진단하기" · 응답으로 S3 결과를 그린다 |
 
 #### Query String / Path Variable
@@ -179,7 +187,7 @@
 
 | 필드 | 타입 | 설명 |
 | --- | --- | --- |
-| `id` | long | 저장된 진단 id |
+| `id` | long \| null | 저장된 진단 id. **비회원(토큰 없음)은 저장하지 않으므로 `null`** |
 | `score` | int | 합계 점수 (docs/01 2~3절) |
 | `grade` | string | `SAFE` / `CAUTION` / `DANGER` |
 | `gradeLabel` | string | 안전 / 주의 / 위험 |
@@ -263,6 +271,7 @@
 | `INVALID_INPUT` | 400 | `mortgageMax`·`seniorDeposit`이 음수 | `mortgageMax`, `seniorDeposit` |
 | `INVALID_INPUT` | 400 | 질문이 빠졌거나 중복, 없는 질문 코드, 답이 enum이 아님 | `answers` |
 | `INVALID_INPUT` | 400 | JSON 형식 오류 | `null` |
+| `UNAUTHORIZED` | 401 | `Authorization` 헤더가 있는데 토큰이 잘못됐거나 만료됨 | `null` |
 
 ---
 
@@ -434,7 +443,191 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 - 입력을 수정해 재평가하면 전체 결과를 다시 계산하고 **기존 기록을 덮어쓴다**
 - 다른 회원의 기록 조회·수정은 거부한다
 
-회원 API의 정확한 경로와 요청·응답 필드는 후속 API 계약에서 확정한다.
+### 6.1 인증 규칙
+
+| 항목 | 내용 |
+| --- | --- |
+| 방식 | 서버가 발급한 **JWT**(HS256)를 `Authorization: Bearer <accessToken>` 헤더로 보낸다. 쿠키·세션은 쓰지 않는다 |
+| 토큰 | 회원가입(6번)·로그인(7번) 응답의 `accessToken`. 유효 시간 **24시간**. 서명 키는 서버 환경 변수 `JWT_SECRET` |
+| 로그아웃 | 서버 API 없음. FE가 저장한 토큰을 지운다 |
+| 토큰 필수 | 8 · 9 · 10번. 토큰이 없거나 잘못됐거나 만료되면 401 `UNAUTHORIZED` → FE는 로그아웃 처리 후 로그인 화면으로 보낸다 |
+| 토큰 선택 | 2번 진단. 없으면 비회원(저장 안 함), 있으면 그 회원 기록으로 저장, **있는데 잘못됐으면 401** |
+| 토큰 안 봄 | 1번 질문 · 4번 일정표 · 5번 OCR은 `Authorization` 헤더를 읽지 않는다. 토큰 상태와 상관없이 항상 동작한다 |
+| 이메일 | 서버가 앞뒤 공백을 지우고 **소문자로 바꿔** 저장·비교한다 (`Demo@Example.com` = `demo@example.com`) |
+| 비밀번호 | 서버에 **BCrypt 해시로만** 저장한다 (NFR-06). 응답·로그에 넣지 않는다 |
+| Mock 모드 | `VITE_USE_MOCK=true`이면 FE는 지금처럼 브라우저 저장 데모 로그인·기록을 그대로 쓰고 이 API들을 부르지 않는다 |
+
+### 6.2 API 상세
+
+#### 6. [회원] 회원가입
+
+`POST /api/auth/signup` · 인증 없음 · P1 · 담당 문한일 · AC-01
+
+| 필드 | 타입 | 필수 | 규칙 |
+| --- | --- | --- | --- |
+| `name` | string | ✅ | 앞뒤 공백 제거 후 1~30자 |
+| `email` | string | ✅ | 이메일 형식, 254자 이하. 소문자로 정규화 |
+| `password` | string | ✅ | 8~128자. 그리고 UTF-8 **72바이트 이하** (BCrypt 한계. 영문·숫자는 72자, 한글은 24자까지) |
+
+```json
+{ "name": "김전세", "email": "jeonse@example.com", "password": "password123" }
+```
+
+**Response — HTTP 201**: 가입과 동시에 로그인된다. 모양은 7번 로그인 응답과 같다.
+
+| 필드 | 타입 | 설명 |
+| --- | --- | --- |
+| `accessToken` | string | JWT. 이후 요청의 `Authorization: Bearer` 값 |
+| `member.id` | long | 회원 id |
+| `member.name` | string | 이름 |
+| `member.email` | string | 정규화한 이메일 |
+
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzYyNzMwMDAwLCJleHAiOjE3NjI4MTY0MDB9.xxxx",
+  "member": { "id": 1, "name": "김전세", "email": "jeonse@example.com" }
+}
+```
+
+| code | HTTP | 상황 | field |
+| --- | --- | --- | --- |
+| `INVALID_INPUT` | 400 | 이름·이메일·비밀번호 규칙 위반, JSON 형식 오류 | `name`, `email`, `password` (JSON 오류는 `null`) |
+| `DUPLICATE_EMAIL` | 409 | 이미 가입한 이메일 (대소문자만 다른 경우 포함). 메시지 `"이미 사용 중인 이메일이에요."` | `email` |
+
+#### 7. [회원] 로그인
+
+`POST /api/auth/login` · 인증 없음 · P1 · 담당 문한일 · AC-01
+
+| 필드 | 타입 | 필수 | 규칙 |
+| --- | --- | --- | --- |
+| `email` | string | ✅ | 소문자로 정규화해 찾는다 |
+| `password` | string | ✅ | |
+
+```json
+{ "email": "jeonse@example.com", "password": "password123" }
+```
+
+**Response — HTTP 200**: 6번 응답과 같은 모양 (`accessToken`, `member`).
+
+| code | HTTP | 상황 | field |
+| --- | --- | --- | --- |
+| `INVALID_INPUT` | 400 | 이메일·비밀번호가 비었음, JSON 형식 오류 | `email`, `password` (JSON 오류는 `null`) |
+| `UNAUTHORIZED` | 401 | 없는 이메일 또는 비밀번호 틀림 (둘을 구분하지 않는다). 메시지 `"이메일 또는 비밀번호를 확인해 주세요."` | `password` |
+
+#### 8. [회원] 내 정보
+
+`GET /api/members/me` · **토큰 필수** · P1 · 담당 문한일 · AC-04 (마이페이지 프로필)
+
+**Response — HTTP 200**
+
+```json
+{ "id": 1, "name": "김전세", "email": "jeonse@example.com" }
+```
+
+| code | HTTP | 상황 | field |
+| --- | --- | --- | --- |
+| `UNAUTHORIZED` | 401 | 토큰 없음, 잘못됨, 만료됨, 탈퇴 등으로 회원이 없음 | `null` |
+
+#### 9. [회원] 내 진단 기록 (최근 5건)
+
+`GET /api/members/me/diagnoses` · **토큰 필수** · P1 · 담당 송석주 · AC-03, AC-04
+
+| 항목 | 내용 |
+| --- | --- |
+| 기능 | 내 진단 중 `createdAt`이 가장 최근인 **5건**을 골라 `createdAt` **오름차순**(최초 진단 순)으로 돌려준다. 오래된 기록은 지우지 않고 목록에서만 빠진다 |
+| 저장 시점 | 로그인 회원이 2번 진단을 부를 때 (토큰 있음) |
+| 데이터 | `diagnoses` (`user_id` = 나), `diagnosis_answers` |
+
+**Response — HTTP 200**
+
+| 필드 | 타입 | 설명 |
+| --- | --- | --- |
+| `diagnoses` | array | 최대 5건, `createdAt` 오름차순. 없으면 `[]` |
+| `diagnoses[].id` | long | 진단 id (10번 재평가 경로에 쓴다) |
+| `diagnoses[].location` | string | 매물 별칭 (`property_name`). 저장 시 서버가 `"보증금 2억 4,000만 원 · 시세 2억 8,000만 원"` 형식으로 만든다 (FE 데모와 같은 문구). 재평가하면 새 금액으로 다시 만든다 |
+| `diagnoses[].createdAt` | string | 최초 진단 일시. 재평가해도 바뀌지 않는다 |
+| `diagnoses[].updatedAt` | string \| null | 마지막 재평가 일시. 재평가한 적 없으면 `null` |
+| `diagnoses[].score` | int | 점수 |
+| `diagnoses[].grade` | string | `SAFE` / `CAUTION` / `DANGER` |
+| `diagnoses[].gradeLabel` | string | 안전 / 주의 / 위험 |
+| `diagnoses[].request` | object | 진단할 때 보낸 입력 그대로 (2번 Request Body와 같은 모양). 마이페이지에서 조건을 고쳐 10번으로 다시 보낸다 |
+| `diagnoses[].request.deposit` | int | 내 보증금 (만원) |
+| `diagnoses[].request.salePrice` | int | 매매 시세 (만원) |
+| `diagnoses[].request.mortgageMax` | int | 채권최고액 합계 (만원). `B1_MORTGAGE`가 `YES`가 아니면 `0` |
+| `diagnoses[].request.seniorDeposit` | int \| null | 선순위 보증금. 진단 때 비웠으면(`senior_unknown`) `null` |
+| `diagnoses[].request.answers` | array | 질문 10개 `{ "code", "answer" }`, 질문 `order` 순서 |
+
+```json
+{
+  "diagnoses": [
+    {
+      "id": 12,
+      "location": "보증금 2억 4,000만 원 · 시세 2억 8,000만 원",
+      "createdAt": "2026-11-09T14:30:00",
+      "updatedAt": "2026-11-10T09:12:00",
+      "score": 70,
+      "grade": "DANGER",
+      "gradeLabel": "위험",
+      "request": {
+        "deposit": 24000,
+        "salePrice": 28000,
+        "mortgageMax": 3600,
+        "seniorDeposit": 0,
+        "answers": [
+          { "code": "T1_ADDRESS", "answer": "YES" },
+          { "code": "T2_USAGE", "answer": "NO" },
+          { "code": "A1_OWNER", "answer": "YES" },
+          { "code": "A2_RECENT_OWNER", "answer": "YES" },
+          { "code": "A3_TRUST", "answer": "NO" },
+          { "code": "A4_SEIZURE", "answer": "NO" },
+          { "code": "B1_MORTGAGE", "answer": "YES" },
+          { "code": "B2_LEASE_REG", "answer": "NO" },
+          { "code": "B3_JEONSE_RIGHT", "answer": "NO" },
+          { "code": "R1_VIOLATION", "answer": "NO" }
+        ]
+      }
+    }
+  ]
+}
+```
+
+| code | HTTP | 상황 | field |
+| --- | --- | --- | --- |
+| `UNAUTHORIZED` | 401 | 토큰 없음, 잘못됨, 만료됨 | `null` |
+
+#### 10. [회원] 진단 기록 재평가 (덮어쓰기)
+
+`PUT /api/members/me/diagnoses/{id}` · **토큰 필수** · P1 · 담당 송석주 · AC-05
+
+| 항목 | 내용 |
+| --- | --- |
+| 기능 | 고친 입력으로 2번과 **같은 규칙**으로 전체 결과를 다시 계산하고, 그 기록(진단 1건 + 답 10개)을 **덮어쓴다**. 새 기록을 만들지 않는다 |
+| 권한 | `{id}`가 **내 진단일 때만**. 남의 진단이거나 없는 id면 404 (남의 기록이 있는지도 알려주지 않는다) |
+| 유지 | `id`, `createdAt`은 그대로. `updatedAt`이 갱신된다 |
+
+**Path Variable**: `id` (long) — 9번 목록의 `diagnoses[].id`
+
+**Request Body**: 2번 진단하기 Request Body와 **같다** (`deposit`, `salePrice`, `mortgageMax`, `seniorDeposit`, `answers`).
+
+**Response — HTTP 200**: 2번 진단하기 Response Body와 **같은 모양**. `id`는 `{id}`와 같고, `createdAt`은 최초 진단 일시다. FE는 이 응답으로 S3 결과를 그린다.
+
+| code | HTTP | 상황 | field |
+| --- | --- | --- | --- |
+| `INVALID_INPUT` | 400 | 2번과 같은 입력 검증 | 2번과 같음 |
+| `UNAUTHORIZED` | 401 | 토큰 없음, 잘못됨, 만료됨 | `null` |
+| `NOT_FOUND` | 404 | 내 것이 아니거나 없는 진단 id. 메시지 `"진단 기록을 찾을 수 없어요."` | `null` |
+
+### 6.3 FE 화면과 대응
+
+| FE 동작 (지금 데모) | 서버 모드 (`VITE_USE_MOCK=false`) |
+| --- | --- |
+| `registerAccount({ name, email, password })` | 6번 → 받은 `accessToken` 저장 후 로그인 상태 |
+| `verifyAccount(email, password)` | 7번 |
+| `readProfile(email)` | 8번 |
+| `readHistory(email)` | 9번 (`date` ← `createdAt`) |
+| 진단 후 `saveDiagnosis(...)` (새 진단) | 2번에 토큰을 붙이면 서버가 저장. 별도 호출 없음 |
+| 마이페이지에서 고쳐 다시 진단 (`replaceId`) | 2번 대신 10번 `PUT .../diagnoses/{id}` |
+| 로그아웃 | 토큰 삭제 (API 없음) |
 
 ## 변경 이력
 
@@ -444,3 +637,5 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 | v1.0 | 11/9 | 명세서 형식으로 정리: 공통 규칙, API 목록, 필드 표, 에러 표, 요구사항 ID, 프론트 데모 기능. API 모양은 v0.1과 같음 | 이상혁 |
 | v1.1 | 11/9 | 강사님 피드백 반영 (D6): 5번 등기부 OCR API 추가 (안지산 #11 흐름: 주소+서류, 질문별 CONFIRMED/UNCONFIRMED), 에러 `OCR_UNREADABLE` 추가. 1~4번은 변경 없음 | 이상혁 |
 | v1.2 | 11/9 | D11: 3번 `GET /api/diagnoses/{id}` 삭제, 5번 건축물대장 필수 + `housingType` 추가, 일정표 할 일 16개 | 이상혁 |
+| v1.3 | 11/10 | D10 회원 API 확정: 6~10번(회원가입·로그인·내 정보·내 진단 기록·재평가) 추가, 에러 `UNAUTHORIZED`·`DUPLICATE_EMAIL` 추가, 2번 진단은 토큰이 있을 때만 저장하고 비회원은 `id: null`. 2번 요청·응답 필드 이름은 그대로 | 이상혁 |
+| v1.3 | 11/10 | 최다인 #21 안 반영: 경로 `/api/auth/signup`·`/api/auth/login`, 가입 필드 제한, 담당(회원가입·로그인·JWT·내 정보 문한일 / 진단 저장·기록·재평가 송석주). 기록 개수·정렬은 #21(10건·최신순)이 아니라 현재 FE(5건·오름차순, D10) 기준. 재평가(10번)는 FE에 기능(D8)이 있어 포함 | 이상혁 |

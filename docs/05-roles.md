@@ -28,7 +28,7 @@
 | **팀장 + FE 드라이버** | 이상혁 | 결정 마무리, PR 머지, 16:00 통합 진행 + **화면 4개 직접 개발** | FrontEnd 전체 | 화면 4개 동작, 17:00 데모 |
 | **FE 리뷰어** | 레퍼런스 임수경·탁유진, 순서도·발표 안지산 | 드라이버가 만든 화면을 보고 **첨삭**(문구, 흐름, 빠진 것), 아래 3절 할 일 | FrontEnd PR 리뷰 | 화면별 수정 요청 목록, 3절 결과물 |
 | **BE1** 진단 | 송석주 | `POST /api/diagnoses` + **점수 계산 로직** + 테스트 | BackEnd `domain.diagnosis` | 데모 케이스 A/B/C = 0·70·40점 |
-| **BE2** 결과 문구 | 최다인 | docs/01 4절 템플릿 → 코드 상수, `factors`·`commonAdvice`·템플릿 `aiExplanation`, BE1 지원. 17시 이후 AI 연동 | BackEnd `diagnosis.advice` | 진단 응답에 질문·특약 문구가 채워짐 |
+| **BE2** 결과 문구 | 최다인 | docs/01 4절 템플릿 → 코드 상수, `factors`·`commonAdvice`·템플릿 `aiExplanation`, BE1 지원. 17시 이후 AI 연동 | BackEnd `domain.diagnosis.advice` | 진단 응답에 질문·특약 문구가 채워짐 |
 | **BE3** 뼈대·일정 | 문한일 | 프로젝트 뼈대(에러 형식, CORS), `GET /api/questions`, `GET /api/schedule` | BackEnd `global`, `domain.question`, `domain.schedule` | 13:40까지 뼈대 PR, API 2개 동작 |
 | **DB** | 손호성 | DDL, `seed.sql`(질문 10개·할 일 16개), 실행 방법 3줄, 발표용 ERD | BackEnd `db/` | 14:00까지 전원 로컬 DB 실행 |
 | **QA** | 이지원 | 테스트 시나리오, 계약서대로 동작하는지 확인, decision-log 관리, 17:00 데모 대본 | BackEnd `qa/`, `docs/decision-log.md` | 시나리오 표 + 데모 리허설 1회 |
@@ -158,7 +158,7 @@ docs/AGENTS.md를 첨부하고 시작.
 |---|---|
 | BE1 | "docs/AGENTS.md와 docs/01, docs/03을 읽어. 나는 BE1이야. Spring Boot 3(Java 17, Gradle, JPA)으로 docs/01 2~3절 점수 규칙을 계산하는 함수와, 데모 케이스 A/B/C(0·70·40점) 테스트를 먼저 만들어줘." |
 | BE2 | "docs/AGENTS.md와 docs/01 4절, docs/03 2절을 읽어. 나는 BE2야. 진단 점수 결과를 받아 factors, commonAdvice, 템플릿 aiExplanation, warnings를 docs/03 모양 그대로 만드는 코드를 Spring Boot 3(Java 17, Gradle, JPA)으로 만들어줘. 오늘은 AI를 부르지 않고 aiUsed=false." |
-| BE2 OCR | "docs/AGENTS.md와 docs/01 1.1절, docs/03 5번, docs/09를 읽어. 나는 BE2야. ocr 패키지에 POST /api/ocr/registry를 Spring Boot 3로 만들어줘. multipart(address, registry, buildingLedger), 응답은 질문 10개 CONFIRMED/UNCONFIRMED. 엔진 호출은 인터페이스 하나로 감싸고, 파일은 저장하지 말고 로그에 개인정보를 남기지 마. 업로드 10MB 설정도 해줘." |
+| BE2 OCR | "docs/AGENTS.md와 docs/01 1.1절, docs/03 5번, docs/09를 읽어. 나는 BE2야. domain.ocr 패키지에 POST /api/ocr/registry를 Spring Boot 3로 만들어줘. multipart(address, registry, buildingLedger), 응답은 질문 10개 CONFIRMED/UNCONFIRMED. 엔진 호출은 인터페이스 하나로 감싸고, 파일은 저장하지 말고 로그에 개인정보를 남기지 마. 업로드 10MB 설정도 해줘." |
 | BE3 | "docs/AGENTS.md와 docs/02, docs/03을 읽어. 나는 BE3야. Spring Boot 3(Java 17, Gradle, JPA) 프로젝트 뼈대(docs/AGENTS.md 패키지 구조, 에러 응답 형식, localhost:5173 CORS 허용)와 GET /api/questions, GET /api/schedule을 docs/03 그대로 만들어줘." |
 | FE 뼈대 | "docs/AGENTS.md와 docs/03, docs/06을 읽어. React + Vite(JavaScript, Tailwind)로 docs/AGENTS.md 폴더 구조대로 뼈대를 만들고, 라우팅 4개와 API 클라이언트, docs/03 예시 JSON을 돌려주는 Mock 모드(VITE_USE_MOCK)를 만들어줘." |
 | FE S2 | "docs/AGENTS.md와 docs/01 1~2절, docs/03 1~2절, docs/06 S2를 읽어. 질문을 섹션 순서대로 하나씩 보여주고 예/아니오/모르겠어요로 답하는 화면과 금액 입력 화면을 만들어줘. 마지막에 POST /api/diagnoses 요청 모양으로 모아줘." |

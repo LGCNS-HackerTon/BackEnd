@@ -29,13 +29,13 @@
 | `global.apiPayload` | BE3 | 에러 응답 형식 `ApiError` |
 | `global.exception` | BE3 | 예외 클래스, `ExceptionAdvice`(공통 예외 처리) |
 | `global.config` | BE3 | CORS 등 설정 |
-| `global.security` | 담당 결정 필요 | JWT 발급·검증 (회원 API용) |
+| `global.security` | BE3 문한일 | JWT 발급·검증 (회원 API용) |
 | `domain.question` | BE3 | `GET /api/questions`, `registry_questions` 엔티티 |
 | `domain.schedule` | BE3 | `GET /api/schedule`, `checklist_items` 엔티티 |
 | `domain.diagnosis` | BE1 | `POST /api/diagnoses`, 점수 계산, `diagnoses`·`diagnosis_answers` 엔티티 |
 | `domain.diagnosis.advice` | BE2 | 결과 문구(factors, commonAdvice, 템플릿 설명) |
 | `domain.ocr` | BE2 | `POST /api/ocr/registry`, OCR 엔진 연동. **서류는 저장하지 않는다** |
-| `domain.member` | 담당 결정 필요 | 선택 로그인·회원가입, 회원별 진단 기록 조회·수정 권한 |
+| `domain.member` | BE3 문한일 (회원가입·로그인·내 정보) · BE1 송석주 (진단 저장·기록·재평가) | 선택 로그인·회원가입, 회원별 진단 기록 조회·수정 권한 |
 
 각 `domain/<기능>` 안은 역할별 하위 패키지로 나누고 섞지 않는다.
 

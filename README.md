@@ -26,7 +26,7 @@ PR마다 CI가 `./gradlew build`(테스트 포함)를 실행합니다. CI는 MyS
 | `DB_URL` | | 예: `jdbc:mysql://localhost:3306/jeonse`. 없으면 H2 |
 | `DB_USERNAME`, `DB_PASSWORD` | | MySQL 계정 |
 | `CLOVA_OCR_URL`, `CLOVA_OCR_SECRET` | | Naver CLOVA OCR 호출 정보. 없으면 OCR API는 422 `OCR_UNREADABLE`로 실패하고 화면은 직접 답하기로 진행합니다 |
-| `JWT_SECRET` | | 회원 인증 JWT 서명 키 |
+| `JWT_SECRET` | | 회원 인증 JWT 서명 키 (32바이트 이상). 없으면 시작 때 임시 키를 만들고 경고 로그를 남깁니다 (재시작하면 로그인이 풀림) |
 
 실제 값은 `.env`에만 두고 커밋하지 않습니다.
 
@@ -40,6 +40,11 @@ PR마다 CI가 `./gradlew build`(테스트 포함)를 실행합니다. CI는 MyS
 | 2 | POST | `/api/diagnoses` | 규칙 기반 점수·등급 + 위험 항목 안내 | P0 | 송석주, 최다인 | `domain.diagnosis`, `domain.diagnosis.advice` |
 | 4 | GET | `/api/schedule` | 계약 일정표 16개 | P0 | 문한일 | `domain.schedule` |
 | 5 | POST | `/api/ocr/registry` | 주소 + 서류로 질문별 확인 여부·답 (multipart) | P1 | 최다인 | `domain.ocr` |
+| 6 | POST | `/api/auth/signup` | 회원가입 (JWT 발급) | P1 | 문한일 | `domain.member` |
+| 7 | POST | `/api/auth/login` | 로그인 (JWT 발급) | P1 | 문한일 | `domain.member` |
+| 8 | GET | `/api/members/me` | 내 정보 (토큰 필수) | P1 | 문한일 | `domain.member` |
+
+9·10번(내 진단 기록, 재평가)과 2번의 로그인 회원 저장은 docs/03 6장 계약만 확정했고 진단 구현과 함께 붙입니다. 로그인 회원 id가 필요한 API는 파라미터에 `@LoginMember Long memberId`(`global.security`)를 붙이고, 토큰이 선택이면 `@LoginMember(required = false)`를 씁니다.
 
 공통 에러, 예외 처리, CORS는 `global` 패키지(문한일)에 둡니다. 기능 코드는 `domain/<기능>/{controller,service,repository,entity,dto}`로 나눕니다 (docs/AGENTS.md).
 

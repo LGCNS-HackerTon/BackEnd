@@ -51,8 +51,8 @@ flowchart TD
 | S2 진단 (주소 → 첨부 → OCR → 보완 질문 → 금액) | `/diagnosis` | FE | `POST /api/ocr/registry`, `GET /api/questions`, `POST /api/diagnoses` | S3 |
 | S3 결과 | `/result` | FE | 없음 (S2가 받은 응답을 넘겨받음) | S2, S4 |
 | S4 계약 체크리스트 | `/schedule` | FE | `GET /api/schedule` | 외부 링크 |
-| 로그인 · 회원가입 (선택) | `/login`, `/signup` | FE·BE | 인증 API(세부 방식 결정 필요) | 이전 화면 또는 S1 |
-| S5 마이페이지 | `/mypage` | FE·BE | 본인 진단 목록·상세·수정/재검토 API | S3, S4 |
+| 로그인 · 회원가입 (선택) | `/login`, `/signup` | FE·BE | `POST /api/auth/signup`, `POST /api/auth/login` (docs/03 6장) | 이전 화면 또는 S1 |
+| S5 마이페이지 | `/mypage` | FE·BE | `GET /api/members/me`, `GET /api/members/me/diagnoses`, `PUT /api/members/me/diagnoses/{id}` (docs/03 6장) | S3, S4 |
 
 - S2는 한 페이지 안에서 단계만 바뀐다: **주소 → 첨부 → OCR → 필요한 질문만 보완 → 금액 입력**. 보완 질문이 있으면 해당 질문 수를 기준으로 진행을 표시한다 (예: `질문 1/3`)
 - 질문 중에는 **이전 버튼**으로 답을 고칠 수 있다

@@ -41,6 +41,12 @@ public class ExceptionAdvice {
                 "INVALID_INPUT", "입력 형식이 올바르지 않아요. 다시 확인해 주세요.", field)));
     }
 
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<ApiError> apiException(ApiException exception) {
+        return ResponseEntity.status(exception.getStatus()).body(new ApiError(
+                new ApiError.ErrorDetail(exception.getCode(), exception.getMessage(), exception.getField())));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> internalError(Exception exception) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiError(
