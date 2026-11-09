@@ -27,9 +27,9 @@
 |---|---|---|---|---|
 | **팀장 + FE 드라이버** | 이상혁 | 결정 마무리, PR 머지, 16:00 통합 진행 + **화면 4개 직접 개발** | FrontEnd 전체 | 화면 4개 동작, 17:00 데모 |
 | **FE 리뷰어** | 레퍼런스 임수경·탁유진, 순서도·발표 안지산 | 드라이버가 만든 화면을 보고 **첨삭**(문구, 흐름, 빠진 것), 아래 3절 할 일 | FrontEnd PR 리뷰 | 화면별 수정 요청 목록, 3절 결과물 |
-| **BE1** 진단 | 송석주 | `POST /api/diagnoses` + **점수 계산 로직** + 테스트 | BackEnd `diagnosis` | 데모 케이스 A/B/C = 0·70·40점 |
+| **BE1** 진단 | 송석주 | `POST /api/diagnoses` + **점수 계산 로직** + 테스트 | BackEnd `domain.diagnosis` | 데모 케이스 A/B/C = 0·70·40점 |
 | **BE2** 결과 문구 | 최다인 | docs/01 4절 템플릿 → 코드 상수, `factors`·`commonAdvice`·템플릿 `aiExplanation`, BE1 지원. 17시 이후 AI 연동 | BackEnd `diagnosis.advice` | 진단 응답에 질문·특약 문구가 채워짐 |
-| **BE3** 뼈대·일정 | 문한일 | 프로젝트 뼈대(에러 형식, CORS), `GET /api/questions`, `GET /api/schedule` | BackEnd `common`, `question`, `schedule` | 13:40까지 뼈대 PR, API 2개 동작 |
+| **BE3** 뼈대·일정 | 문한일 | 프로젝트 뼈대(에러 형식, CORS), `GET /api/questions`, `GET /api/schedule` | BackEnd `global`, `domain.question`, `domain.schedule` | 13:40까지 뼈대 PR, API 2개 동작 |
 | **DB** | 손호성 | DDL, `seed.sql`(질문 10개·할 일 16개), 실행 방법 3줄, 발표용 ERD | BackEnd `db/` | 14:00까지 전원 로컬 DB 실행 |
 | **QA** | 이지원 | 테스트 시나리오, 계약서대로 동작하는지 확인, decision-log 관리, 17:00 데모 대본 | BackEnd `qa/`, `docs/decision-log.md` | 시나리오 표 + 데모 리허설 1회 |
 
@@ -94,7 +94,7 @@
 - [ ] 선순위 보증금이 없으면 `warnings`에 문장 추가
 - [ ] (17시 이후) AI 연동: 타임아웃 5초, 실패하면 템플릿. 키는 `.env`
 - [x] **OCR 엔진 결정: Naver CLOVA OCR** → decision-log D9 기록
-- [ ] `ocr` 패키지에 `POST /api/ocr/registry` (docs/03 5번): `address` + `registry` + `buildingLedger`(둘 다 필수, D11) multipart, 응답에 `housingType`
+- [ ] `domain.ocr` 패키지에 `POST /api/ocr/registry` (docs/03 5번): `address` + `registry` + `buildingLedger`(둘 다 필수, D11) multipart, 응답에 `housingType`
 - [ ] 응답은 질문 **10개 전부** `CONFIRMED/UNCONFIRMED`. 판독 못 한 건 `NO`가 아니라 `UNCONFIRMED`
 - [ ] `application.yml`에 업로드 10MB 설정 (`spring.servlet.multipart.max-file-size`, `max-request-size`. 기본 1MB)
 - [ ] 서류·주소는 **저장 금지**(디스크·DB 쓰기 없음), 로그에 이름·주소·파일 내용 금지. 엔진 타임아웃 10초 → 422 `OCR_UNREADABLE`

@@ -22,19 +22,32 @@
 | AI | 내일 BE2가 연동 (오늘은 템플릿). API 키는 `.env`에만, 절대 커밋 금지 |
 
 ### 백엔드 패키지 구조
-기능별로 나눠서 BE 3명이 같은 파일을 덜 건드리게 한다. 기본 패키지 `com.lgcns.jeonse`.
+기능별로 나눠서 BE 3명이 같은 파일을 덜 건드리게 한다. 기본 패키지 `com.lgcns.jeonse`. 기능은 `domain/<기능>`, 공통은 `global`에 둔다.
 
 | 패키지 | 담당 | 내용 |
 |---|---|---|
-| `common` | BE3 | 에러 응답 형식, 예외 처리, CORS 설정 |
-| `question` | BE3 | `GET /api/questions`, `registry_questions` 엔티티 |
-| `schedule` | BE3 | `GET /api/schedule`, `checklist_items` 엔티티 |
-| `diagnosis` | BE1 | `POST /api/diagnoses`, 점수 계산, `diagnoses`·`diagnosis_answers` 엔티티 |
-| `diagnosis.advice` | BE2 | 결과 문구(factors, commonAdvice, 템플릿 설명) |
-| `ocr` | BE2 | `POST /api/ocr/registry`, OCR 엔진 연동. **서류는 저장하지 않는다** |
-| `auth`, `member` | 담당 결정 필요 | 선택 로그인·회원가입, 회원별 진단 기록 조회·수정 권한 |
+| `global.apiPayload` | BE3 | 에러 응답 형식 `ApiError` |
+| `global.exception` | BE3 | 예외 클래스, `ExceptionAdvice`(공통 예외 처리) |
+| `global.config` | BE3 | CORS 등 설정 |
+| `global.security` | 담당 결정 필요 | JWT 발급·검증 (회원 API용) |
+| `domain.question` | BE3 | `GET /api/questions`, `registry_questions` 엔티티 |
+| `domain.schedule` | BE3 | `GET /api/schedule`, `checklist_items` 엔티티 |
+| `domain.diagnosis` | BE1 | `POST /api/diagnoses`, 점수 계산, `diagnoses`·`diagnosis_answers` 엔티티 |
+| `domain.diagnosis.advice` | BE2 | 결과 문구(factors, commonAdvice, 템플릿 설명) |
+| `domain.ocr` | BE2 | `POST /api/ocr/registry`, OCR 엔진 연동. **서류는 저장하지 않는다** |
+| `domain.member` | 담당 결정 필요 | 선택 로그인·회원가입, 회원별 진단 기록 조회·수정 권한 |
 
-각 패키지 안은 `Controller` / `Service` / `Repository` / 엔티티 / `dto`로 나눈다.
+각 `domain/<기능>` 안은 역할별 하위 패키지로 나누고 섞지 않는다.
+
+| 하위 패키지 | 넣는 것 | 예 |
+|---|---|---|
+| `controller` | `@RestController` | `QuestionController` |
+| `service` | 비즈니스 로직 | `QuestionService` |
+| `repository` | `JpaRepository` | `RegistryQuestionRepository` |
+| `entity` | `@Entity` | `RegistryQuestion` |
+| `dto` | 요청·응답 형식. 파일 이름은 `~RequestDTO`, `~ResponseDTO` | `QuestionResponseDTO` |
+| `converter` | 엔티티 ↔ DTO 변환 (필요할 때만) | `QuestionConverter` |
+| `init` | 기본 데이터 넣기 (H2 로컬용) | `QuestionDataInitializer` |
 
 ### 프론트 폴더 구조
 
