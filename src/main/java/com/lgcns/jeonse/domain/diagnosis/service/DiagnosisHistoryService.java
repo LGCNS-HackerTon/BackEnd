@@ -53,8 +53,12 @@ public class DiagnosisHistoryService {
                 result.grade(), advice.aiExplanation(), advice.aiUsed());
         Map<String, DiagnosisAnswer> answers = answerRepository.findByDiagnosisIdInOrderByIdAsc(List.of(id)).stream()
                 .collect(Collectors.toMap(DiagnosisAnswer::getQuestionCode, Function.identity()));
-        for (ScoreResult.ScoredAnswer scored : result.scoredAnswers())
-            answers.get(scored.code()).overwrite(scored.answer(), scored.score());
+        for (ScoreResult.ScoredAnswer scored : result.scoredAnswers()) {
+            DiagnosisAnswer saved = answers.get(scored.code());
+            // 답 행이 빠진 기록이면 500 대신 새 행으로 채운다
+            if (saved == null) answerRepository.save(new DiagnosisAnswer(diagnosis, scored.code(), scored.answer(), scored.score()));
+            else saved.overwrite(scored.answer(), scored.score());
+        }
         return diagnosis;
     }
 
