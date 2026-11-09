@@ -1,0 +1,10 @@
+# DB 실행 방법 (MySQL 8 기준, MariaDB 10.5 이상도 가능)
+
+1. `BackEnd` 폴더에서 터미널(PowerShell·CMD 모두 가능)을 열고 `mysql -u root -p --default-character-set=utf8mb4 -e "source db/schema.sql"` 실행 → `jeonse` DB(없으면 생성)에 테이블 5개 생성 (**회원·진단을 포함한 앱 테이블 5개의 기존 데이터는 지워짐**, 실거래가 테이블 등 다른 테이블은 그대로)
+2. 이어서 `mysql -u root -p --default-character-set=utf8mb4 -e "source db/seed.sql"` 실행 → 질문 10개, 할 일 14개 (여러 번 실행해도 중복 안 됨)
+3. 확인: `mysql -u root -p jeonse -e "SELECT COUNT(*) FROM registry_questions; SELECT COUNT(*) FROM checklist_items;"` → 10, 14
+
+> - `mysql`을 찾을 수 없다고 나오면 MySQL 설치 폴더의 `bin`(예: `C:\Program Files\MySQL\MySQL Server 8.0\bin`)을 PATH에 추가하거나, 그 폴더의 전체 경로로 `mysql.exe`를 실행한다.
+> - PowerShell에서는 `mysql ... < db/schema.sql`처럼 `<`를 쓰면 오류가 나서 `-e "source ..."` 방식을 쓴다.
+> - MySQL Workbench를 쓰면 `schema.sql` → `seed.sql` 순서로 파일을 열고 ⚡(Execute) 버튼을 누른다.
+> - BE의 `.env`: `DB_URL=jdbc:mysql://localhost:3306/jeonse`, `DB_USERNAME`, `DB_PASSWORD`
