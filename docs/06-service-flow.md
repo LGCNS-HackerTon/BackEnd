@@ -1,6 +1,6 @@
 # 서비스 흐름
 
-> 상태: **초안 (오늘 17시 범위 기준)**. 화면 경로는 FE1이 라우팅할 때 이 표를 그대로 쓴다.
+> 상태: **초안 (오늘 17시 범위 기준)**. 화면 경로는 FE가 라우팅할 때 이 표를 그대로 쓴다.
 > 그림은 Mermaid라서 GitHub에서 열면 그려져.
 
 ## 1. 한 줄 흐름 (가이드의 INPUT → PROCESS → OUTPUT)
@@ -38,10 +38,10 @@ flowchart TD
 
 | 화면 | 경로 | 담당 | 부르는 API | 다음 화면 |
 |---|---|---|---|---|
-| S1 첫 화면 | `/` | FE1 | 없음 | S2, S4 |
-| S2 진단 (준비 → 질문 → 금액) | `/diagnosis` | FE2 | `GET /api/questions`, `POST /api/diagnoses` | S3 |
-| S3 결과 | `/result` | FE3 | 없음 (S2가 받은 응답을 넘겨받음) | S2, S4 |
-| S4 일정표 | `/schedule` | FE4 | `GET /api/schedule` | 외부 링크 |
+| S1 첫 화면 | `/` | FE | 없음 | S2, S4 |
+| S2 진단 (준비 → 질문 → 금액) | `/diagnosis` | FE | `GET /api/questions`, `POST /api/diagnoses` | S3 |
+| S3 결과 | `/result` | FE | 없음 (S2가 받은 응답을 넘겨받음) | S2, S4 |
+| S4 일정표 | `/schedule` | FE | `GET /api/schedule` | 외부 링크 |
 
 - S2는 한 페이지 안에서 단계만 바뀐다: **준비 → 질문 1~10 → 금액 입력**. 상단에 진행 표시 (예: `질문 3/10`)
 - 질문 중에는 **이전 버튼**으로 답을 고칠 수 있다

@@ -38,12 +38,12 @@
 
 | 폴더 | 담당 | 내용 |
 |---|---|---|
-| `src/api/` | FE1 | API 클라이언트, Mock 데이터 (docs/03 예시 JSON) |
-| `src/components/common/` | FE1 | 버튼, 카드, 등급 색 |
-| `src/pages/Home/` | FE1 | S1 첫 화면 `/` |
-| `src/pages/Diagnosis/` | FE2 | S2 진단 `/diagnosis` |
-| `src/pages/Result/` | FE3 | S3 결과 `/result` |
-| `src/pages/Schedule/` | FE4 | S4 일정표 `/schedule` |
+| `src/api/` | FE | API 클라이언트, Mock 데이터 (docs/03 예시 JSON) |
+| `src/components/common/` | FE | 버튼, 카드, 등급 색 |
+| `src/pages/Home/` | FE | S1 첫 화면 `/` |
+| `src/pages/Diagnosis/` | FE | S2 진단 `/diagnosis` |
+| `src/pages/Result/` | FE | S3 결과 `/result` |
+| `src/pages/Schedule/` | FE | S4 일정표 `/schedule` |
 
 ### 환경 변수 (`.env.example`만 커밋)
 

@@ -30,9 +30,6 @@ assignees: ''
 - [ ] BE1
 - [ ] BE2
 - [ ] BE3
-- [ ] FE1
-- [ ] FE2
-- [ ] FE3
-- [ ] FE4
+- [ ] FE
 - [ ] DB
 - [ ] QA
