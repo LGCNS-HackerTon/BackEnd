@@ -33,6 +33,7 @@
 | [docs/04-db-schema.md](docs/04-db-schema.md) | 테이블 4개, DDL 초안 | DB, BE |
 | [docs/06-service-flow.md](docs/06-service-flow.md) | **화면 흐름, 화면 경로**, 화면별 내용, 시스템·에러 흐름 | FE, BE, QA |
 | [docs/05-roles.md](docs/05-roles.md) | 역할 분담, 오늘 시간표, **역할별 체크리스트** | 전원 |
+| [docs/07-git-rules.md](docs/07-git-rules.md) | **GitHub 협업 규칙**: 이슈, 브랜치, 커밋, PR, 충돌 해결 | 전원 |
 | [docs/decision-log.md](docs/decision-log.md) | 결정 기록 (처음 생각 → 확인한 내용 → 바뀐 판단) | 전원 |
 
 ## 4. AI에게 일 시킬 때 지켜야 할 규칙
@@ -45,6 +46,7 @@
 6. **결과 화면에 면책 문구 필수**: "참고용이며 법적 판단이 아닙니다. 계약 전 공인중개사·전문가에게 확인하세요."
 7. **사용자에게 보이는 문구는 쉬운 한국어**로. 법률 용어가 나오면 바로 옆에 풀이를 붙인다
 8. **비밀값(API 키, DB 비밀번호)은 `.env`에** 두고 `.env.example`만 커밋한다
+9. **커밋 메시지, PR 본문, 코드 주석에 `Co-Authored-By`, `Generated with` 같은 도구 서명을 넣지 않는다.** 커밋은 `[역할] 한 일` 형식만 쓴다 (docs/07)
 
 ## 5. 공통 약속 (용어와 단위)
 
