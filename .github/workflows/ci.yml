@@ -30,8 +30,9 @@ jobs:
       - name: Check project
         id: project
         run: |
-          if [ -f gradlew ]; then
+          if [ -f build.gradle ] || [ -f build.gradle.kts ]; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
+            if [ -f gradlew ]; then echo "wrapper=true" >> "$GITHUB_OUTPUT"; else echo "wrapper=false" >> "$GITHUB_OUTPUT"; fi
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
             echo "No Gradle project yet, skipping build."
@@ -45,6 +46,9 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
         if: steps.project.outputs.exists == 'true'
+        with:
+          # shortcut: gradlew가 없으면 README 기준 Gradle 8.12로 빌드. wrapper가 들어오면 자동으로 ./gradlew 사용
+          gradle-version: ${{ steps.project.outputs.wrapper == 'true' && 'wrapper' || '8.12' }}
 
       - name: Load schema and seed
         if: steps.project.outputs.exists == 'true'
@@ -59,5 +63,9 @@ jobs:
       - name: Build and test
         if: steps.project.outputs.exists == 'true'
         run: |
-          chmod +x gradlew
-          ./gradlew build --no-daemon
+          if [ -f gradlew ]; then
+            chmod +x gradlew
+            ./gradlew build --no-daemon
+          else
+            gradle build --no-daemon
+          fi
