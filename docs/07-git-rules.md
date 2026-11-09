@@ -160,7 +160,7 @@ git push
 
 15분 넘게 안 풀리면 팀장 호출.
 
-## 8. 문서(docs/, AGENTS.md) 바꾸기
+## 8. 문서(docs/, docs/AGENTS.md) 바꾸기
 
 1. **계약 변경 요청** 이슈를 올리고 단톡에 공유
 2. 관련 역할이 OK하면 **BackEnd 저장소**에서 docs를 고치는 PR

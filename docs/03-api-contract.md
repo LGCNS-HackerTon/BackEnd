@@ -1,18 +1,36 @@
-# API 계약서 (FE ↔ BE 약속)
+# 첫 전세 가이드 API 명세서
 
-> 상태: **초안 v0.1**. 바꾸려면 팀에 먼저 말하고 이 문서부터 고친다. 버전을 올리고 맨 아래 변경 이력에 적기.
-> FE는 BE가 완성되기 전까지 **이 문서의 예시 JSON을 Mock으로** 써서 화면을 만든다.
+첫 전세 계약 가이드 · LG CNS AM Inspire 6기 해커톤 · 1팀 · **FE ↔ BE 계약**
 
-## 공통
+- 작성자: 이상혁 (팀장) · 작성일: 2026.11.09 · 버전: v1.0 · 기준: docs/01 점수 규칙, docs/02 일정 규칙, docs/08 요구사항
+- 바꾸려면 **계약 변경 요청 이슈**부터 올리고 이 문서를 먼저 고친 뒤 코드를 고친다. 맨 아래 변경 이력에 적기
+- FE는 BE가 완성되기 전까지 이 문서의 예시 JSON을 Mock으로 쓴다
 
-| 항목 | 약속 |
-|---|---|
-| 주소 | `/api/...` |
+## 1. 개요
+
+| 항목 | 내용 |
+| --- | --- |
+| 범위 | API 4개 = P0 3개(질문 조회, 진단, 일정표) + P2 1개(진단 다시 보기) |
+| 호출 주소 | `http://localhost:8080/api/...` (FE는 `VITE_API_BASE_URL`로 지정) |
 | 형식 | JSON, UTF-8 |
-| 금액 | 만원 단위 정수 |
-| 날짜 | `YYYY-MM-DD` |
+| 인증 | **없음.** 모든 API는 로그인 없이 호출한다. 로그인·마이페이지는 프론트 브라우저 저장 데모라 서버 API가 없다 (5장) |
+| 담당 | 공통 규칙·에러 형식·CORS 문한일(BE3) · 진단 송석주(BE1), 결과 문구 최다인(BE2) · 질문·일정표 문한일(BE3) |
+| 요구사항 | docs/08-requirements.md의 ID(DG, RS, SC)를 API마다 표기 |
 
-### 에러 응답 (모든 API 공통)
+## 2. 공통 규칙
+
+| 항목 | 내용 |
+| --- | --- |
+| ① 경로 | 모두 `/api`로 시작한다. 복수형 명사 (`/api/questions`, `/api/diagnoses`) |
+| ② 금액 | **만원 단위 정수** (2억 4천만 원 = `24000`). 소수 금지 |
+| ③ 날짜 | 날짜 `YYYY-MM-DD`, 일시 `YYYY-MM-DDTHH:mm:ss` (시간대 없는 KST) |
+| ④ enum | 답변 `YES` · `NO` · `UNKNOWN` / 등급 `SAFE` · `CAUTION` · `DANGER` / 섹션 `TITLE`(표제부) · `GAPGU`(갑구) · `EULGU`(을구) · `BUILDING`(건축물대장) / 일정 기준일 `CONTRACT` · `BALANCE` · `MOVE_IN` · `EXPIRY` / 일정 상태 `PAST` · `TODAY` · `UPCOMING` |
+| ⑤ 질문 코드 | `T1_ADDRESS`, `T2_USAGE`, `A1_OWNER`, `A2_RECENT_OWNER`, `A3_TRUST`, `A4_SEIZURE`, `B1_MORTGAGE`, `B2_LEASE_REG`, `B3_JEONSE_RIGHT`, `R1_VIOLATION` (docs/01). 위험 항목에는 `DEBT_RATIO`도 쓴다 |
+| ⑥ 에러 | 모든 API 공통 본문 `{"error": {"code", "message", "field"}}`. `message`는 화면에 그대로 띄울 수 있는 쉬운 한국어 해요체 (아래 표) |
+| ⑦ CORS | `http://localhost:5173` 허용 (BE3) |
+| ⑧ 점수 | 점수·등급은 **서버만** 계산한다. 질문 조회 응답에 위험한 답이나 점수를 넣지 않는다 |
+
+### 공통 에러
 
 ```json
 {
@@ -24,21 +42,53 @@
 }
 ```
 
-| HTTP | code | 언제 |
-|---|---|---|
-| 400 | `INVALID_INPUT` | 입력값이 규칙에 안 맞음 (`field`에 어떤 값인지) |
-| 404 | `NOT_FOUND` | 없는 진단 id |
-| 500 | `INTERNAL_ERROR` | 서버 오류 (`field`는 `null`) |
+| code | HTTP | 상황 | field |
+| --- | --- | --- | --- |
+| `INVALID_INPUT` | 400 | 입력값이 규칙에 안 맞음, JSON 형식 오류, 없는 enum 값, 날짜 형식 오류 | 문제 필드 이름 (없으면 `null`) |
+| `NOT_FOUND` | 404 | 없는 진단 id | `null` |
+| `INTERNAL_ERROR` | 500 | 처리 못 한 서버 오류. 내부 메시지는 숨긴다 | `null` |
 
-`message`는 화면에 그대로 띄울 수 있는 쉬운 한국어로 쓴다.
+## 3. API 목록
 
----
+| No | 분류 | 이름 | 메서드 | EndPoint | 순위 | 담당 | 요구사항 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 진단 | 질문 목록 조회 | GET | `/api/questions` | P0 | 문한일 | DG-02 |
+| 2 | 진단 | 진단하기 | POST | `/api/diagnoses` | P0 | 송석주, 최다인 | DG-07~11, RS-01~07 |
+| 3 | 진단 | 진단 결과 다시 보기 | GET | `/api/diagnoses/{id}` | P2 | 송석주 | RS-09 |
+| 4 | 일정표 | 계약 일정표 | GET | `/api/schedule` | P0 | 문한일 | SC-01~05 |
 
-## 1. 질문 목록 조회
+## 4. API 상세
 
-`GET /api/questions`
+### 1. [진단] 질문 목록 조회
 
-### 응답 200
+`GET /api/questions` · 인증 없음 · P0 · 담당 문한일 · DG-02
+
+| 항목 | 내용 |
+| --- | --- |
+| 기능 | 등기부 점검 질문 10개를 화면에 보여줄 순서대로 돌려준다 |
+| 데이터 | `registry_questions` 테이블 (seed: docs/01 1절) |
+| 화면 | S2 진단 · "준비됐어요"를 누를 때 호출 |
+
+#### Query String / Path Variable
+
+없음
+
+#### Request Body
+
+없음
+
+#### Response Body — HTTP 200
+
+| 필드 | 타입 | 설명 |
+| --- | --- | --- |
+| `questions` | array | 질문 10개, `order` 오름차순 |
+| `questions[].code` | string | 질문 코드 (2장 ⑤) |
+| `questions[].section` | string | `TITLE` / `GAPGU` / `EULGU` / `BUILDING` |
+| `questions[].sectionName` | string | 표제부 / 갑구 / 을구 / 건축물대장 |
+| `questions[].order` | int | 1~10 |
+| `questions[].text` | string | 질문 문장 |
+| `questions[].help` | string | 쉬운 설명 (해요체) |
+| `questions[].needsAmount` | boolean | `true`면 `YES` 답에 채권최고액 입력칸을 연다 (`B1_MORTGAGE`만 `true`) |
 
 ```json
 {
@@ -65,18 +115,42 @@
 }
 ```
 
-- `section`: `TITLE`(표제부) / `GAPGU`(갑구) / `EULGU`(을구) / `BUILDING`(건축물대장)
-- `order` 순서대로 보여준다. 질문 내용은 docs/01 1절과 같다
-- `needsAmount: true`인 질문(`B1_MORTGAGE`)에 `YES`라고 답하면 FE는 **채권최고액 입력칸**을 보여준다
-- 어떤 답이 위험한지, 몇 점인지는 **응답에 넣지 않는다** (계산은 서버만)
+위험한 답(`risky_answer`)과 점수(`risk_score`)는 **응답에 넣지 않는다** (2장 ⑧).
+
+#### 에러
+
+| code | HTTP | 상황 |
+| --- | --- | --- |
+| `INTERNAL_ERROR` | 500 | 질문 데이터를 읽지 못함 |
 
 ---
 
-## 2. 진단하기
+### 2. [진단] 진단하기
 
-`POST /api/diagnoses`
+`POST /api/diagnoses` · 인증 없음 · P0 · 담당 송석주(점수), 최다인(결과 문구) · DG-07~11, RS-01~07
 
-### 요청
+| 항목 | 내용 |
+| --- | --- |
+| 기능 | 답 10개와 금액으로 위험 점수·등급을 계산하고, 위험 항목별 안내를 붙여 돌려준다. 진단 1건과 답 10개를 저장한다 |
+| 계산 규칙 | docs/01 1~3절 (점수표, 부채비율, 등급) |
+| 데이터 | `diagnoses`, `diagnosis_answers` 저장 · `registry_questions` 읽기 |
+| 화면 | S2 금액 입력 → "진단하기" · 응답으로 S3 결과를 그린다 |
+
+#### Query String / Path Variable
+
+없음
+
+#### Request Body
+
+| 필드 | 타입 | 필수 | 규칙 |
+| --- | --- | --- | --- |
+| `deposit` | int | ✅ | 내 보증금. 1 이상 |
+| `salePrice` | int | ✅ | 매매 시세. 1 이상 |
+| `mortgageMax` | int | | 채권최고액 합계. 0 이상. `B1_MORTGAGE`가 `YES`가 아니면 서버는 0으로 본다 |
+| `seniorDeposit` | int \| null | | 선순위 보증금. 0 이상. **빼거나 `null`이면 0으로 계산하고 `warnings`에 경고 추가.** `0`을 직접 보내면 경고 없음 |
+| `answers` | array | ✅ | 질문 10개 코드가 **빠짐없이 한 번씩** |
+| `answers[].code` | string | ✅ | 질문 코드 |
+| `answers[].answer` | string | ✅ | `YES` / `NO` / `UNKNOWN` |
 
 ```json
 {
@@ -99,15 +173,29 @@
 }
 ```
 
-| 필드 | 필수 | 규칙 |
-|---|---|---|
-| `deposit` | ✅ | 1 이상 정수 |
-| `salePrice` | ✅ | 1 이상 정수 |
-| `mortgageMax` | | 0 이상. `B1_MORTGAGE`가 `YES`가 아니면 서버는 0으로 본다 |
-| `seniorDeposit` | | 0 이상. **빼거나 `null`이면 0으로 계산하고 `warnings`에 경고 추가** |
-| `answers` | ✅ | 10개 질문 코드가 **빠짐없이 한 번씩**. 값은 `YES`/`NO`/`UNKNOWN` |
+#### Response Body — HTTP 201
 
-### 응답 201 (위 요청 = docs/01 데모 케이스 B)
+| 필드 | 타입 | 설명 |
+| --- | --- | --- |
+| `id` | long | 저장된 진단 id |
+| `score` | int | 합계 점수 (docs/01 2~3절) |
+| `grade` | string | `SAFE` / `CAUTION` / `DANGER` |
+| `gradeLabel` | string | 안전 / 주의 / 위험 |
+| `gradeMessage` | string | 등급 문구 (docs/01 3절) |
+| `debtRatio` | number | 부채비율 %, 소수 첫째 자리 반올림. 점수 구간 판정은 반올림 전 값으로 |
+| `factors` | array | 점수 > 0인 항목, **점수 큰 순서**. 단 `B1_MORTGAGE`가 `YES`면 0점이어도 **마지막에** 넣는다 (말소 특약 안내용) |
+| `factors[].code` | string | 질문 코드 또는 `DEBT_RATIO` |
+| `factors[].score` | int | 이 항목 점수 |
+| `factors[].title` | string | 결과 화면 제목 (docs/01 4절 `factor_title`) |
+| `factors[].explanation` | string | 쉬운 설명 |
+| `factors[].askAgent` | string | 중개사에게 물어볼 질문 |
+| `factors[].specialClause` | string \| null | 특약 문구. 특약으로 해결이 어려운 항목은 `null` → 화면에 "계약 보류를 권해요" |
+| `commonAdvice` | object | 모든 진단에 붙는 공통 안내 (`askAgent`, `specialClause`) |
+| `aiExplanation` | string | 결과 한 문단 설명. **AI 실패·미연동 시 템플릿 문장** |
+| `aiUsed` | boolean | AI가 쓴 설명이면 `true`, 템플릿이면 `false` (오늘은 `false`) |
+| `warnings` | string[] | 경고 문장. 없으면 `[]` |
+| `disclaimer` | string | 면책 문구. **항상** 포함 |
+| `createdAt` | string | 저장 일시 |
 
 ```json
 {
@@ -156,48 +244,98 @@
     "specialClause": "임대인은 잔금일 다음 날까지 등기부상 권리관계를 현재 상태로 유지하며, 근저당권 등 새로운 권리를 설정하지 않는다. 위반 시 임차인은 계약을 해제할 수 있고 임대인은 손해를 배상한다."
   },
   "aiExplanation": "이 집은 위험 등급이에요. 가장 큰 이유는 빚과 보증금을 합친 금액이 집값의 98.6%라서, 집이 경매로 넘어가면 보증금을 다 돌려받기 어려울 수 있다는 점이에요. ...",
-  "aiUsed": true,
+  "aiUsed": false,
   "warnings": [],
   "disclaimer": "참고용이며 법적 판단이 아닙니다. 계약 전 공인중개사·전문가에게 확인하세요.",
   "createdAt": "2026-11-09T14:30:00"
 }
 ```
 
-| 필드 | 설명 |
-|---|---|
-| `score`, `grade` | docs/01 2~3절 규칙으로 계산 |
-| `debtRatio` | 소수점 첫째 자리까지 (반올림) |
-| `factors` | 점수가 0보다 큰 항목, **점수 큰 순서**. 단, 근저당이 있으면(`B1_MORTGAGE`=`YES`) 0점이어도 마지막에 넣는다 (말소 특약을 보여주려고) |
-| `factors[].code` | 질문 코드 또는 `DEBT_RATIO` |
-| `factors[].askAgent`, `specialClause` | docs/01 4절 템플릿. 특약으로 해결이 어려운 항목은 `specialClause: null` |
-| `aiExplanation` | AI가 쓴 전체 설명. **AI 실패 시 템플릿 문장**으로 채우고 `aiUsed: false` |
-| `warnings` | 예: `["선순위 보증금을 모르면 0으로 계산했어요. 다가구주택이라면 중개사에게 꼭 물어보세요."]` |
+위 예시는 docs/01 **데모 케이스 B**다. `seniorDeposit`을 빼면 점수는 같고 `warnings`에 `"선순위 보증금을 모르면 0으로 계산했어요. 다가구주택이라면 중개사에게 꼭 물어보세요."`가 들어간다.
+
+#### 에러
+
+| code | HTTP | 상황 | field 예시 |
+| --- | --- | --- | --- |
+| `INVALID_INPUT` | 400 | 금액이 0 이하 또는 정수가 아님 | `deposit`, `salePrice` |
+| `INVALID_INPUT` | 400 | `mortgageMax`·`seniorDeposit`이 음수 | `mortgageMax`, `seniorDeposit` |
+| `INVALID_INPUT` | 400 | 질문이 빠졌거나 중복, 없는 질문 코드, 답이 enum이 아님 | `answers` |
+| `INVALID_INPUT` | 400 | JSON 형식 오류 | `null` |
 
 ---
 
-## 3. 진단 결과 다시 보기 (공유 링크용)
+### 3. [진단] 진단 결과 다시 보기 (P2)
 
-`GET /api/diagnoses/{id}`
+`GET /api/diagnoses/{id}` · 인증 없음 · **P2 (오늘 범위 밖)** · 담당 송석주 · RS-09
 
-- 응답 200: 2번의 응답 201과 **똑같은 모양**
-- 없으면 404 `NOT_FOUND`
+| 항목 | 내용 |
+| --- | --- |
+| 기능 | 저장된 진단을 다시 조회한다 (공유 링크용) |
+| 계산 | 저장된 `diagnosis_answers.score`, `diagnoses.debt_ratio`로 `factors`를 다시 만든다 |
+
+#### Path Variable
+
+| 이름 | 타입 | 설명 |
+| --- | --- | --- |
+| `id` | long | 진단 id |
+
+#### Response Body — HTTP 200
+
+2번 응답(HTTP 201)과 **똑같은 모양**
+
+#### 에러
+
+| code | HTTP | 상황 |
+| --- | --- | --- |
+| `NOT_FOUND` | 404 | 없는 id |
+| `INVALID_INPUT` | 400 | id가 숫자가 아님 |
 
 ---
 
-## 4. 계약 일정표
+### 4. [일정표] 계약 일정표
 
-`GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026-12-20&termMonths=24`
+`GET /api/schedule` · 인증 없음 · P0 · 담당 문한일 · SC-01~05
 
-| 파라미터 | 필수 | 규칙 |
-|---|---|---|
-| `contractDate` | ✅ | |
-| `balanceDate` | ✅ | `contractDate` 이후거나 같은 날 |
-| `moveInDate` | | 없으면 `balanceDate`와 같은 날. `balanceDate` 이후거나 같은 날 |
-| `termMonths` | | 기본 24. 1 이상 |
+| 항목 | 내용 |
+| --- | --- |
+| 기능 | 계약 날짜로 D-day 할 일 14개의 날짜·남은 날·상태를 계산한다. **저장하지 않는다** |
+| 계산 규칙 | docs/02 (기준일 + `offsetDays`) |
+| 데이터 | `checklist_items` 읽기 |
+| 화면 | S4 일정표 · "일정표 만들기" |
 
-저장하지 않고 계산만 해서 돌려준다.
+#### Query String
 
-### 응답 200
+| 이름 | 타입 | 필수 | 규칙 |
+| --- | --- | --- | --- |
+| `contractDate` | date | ✅ | 계약일 |
+| `balanceDate` | date | ✅ | 잔금일. `contractDate` 이후거나 같은 날 |
+| `moveInDate` | date | | 입주일. 없으면 `balanceDate`. `balanceDate` 이후거나 같은 날 |
+| `termMonths` | int | | 계약 기간(개월). 기본 24, 1 이상 |
+
+```
+GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026-12-20&termMonths=24
+```
+
+#### Request Body
+
+없음
+
+#### Response Body — HTTP 200
+
+| 필드 | 타입 | 설명 |
+| --- | --- | --- |
+| `today` | date | 서버 기준 오늘 |
+| `expiryDate` | date | 만기일 = 입주일 + `termMonths` |
+| `items` | array | 할 일 14개. `date` 오름차순, 같으면 `order` 오름차순 |
+| `items[].order` | int | docs/02 순서 번호 (1~14) |
+| `items[].anchor` | string | `CONTRACT` / `BALANCE` / `MOVE_IN` / `EXPIRY` |
+| `items[].date` | date | 기준일 + `offsetDays` |
+| `items[].daysLeft` | int | `date - today` (일). 음수면 지난 일 |
+| `items[].status` | string | `PAST`(daysLeft < 0) / `TODAY`(0) / `UPCOMING`(> 0) |
+| `items[].title` | string | 할 일 |
+| `items[].reason` | string | 왜 해야 하는지 |
+| `items[].important` | boolean | `true`면 빨간 강조 (9번, 11번) |
+| `items[].link` | object \| null | `{ "name", "url" }`. 없으면 `null` |
 
 ```json
 {
@@ -230,18 +368,27 @@
 }
 ```
 
-| 필드 | 설명 |
-|---|---|
-| `date` | 기준일 + `offsetDays` (docs/02) |
-| `daysLeft` | `date - today` (일). 음수면 지난 일 |
-| `status` | `PAST`(daysLeft < 0) / `TODAY`(0) / `UPCOMING`(> 0) |
-| `items` 정렬 | `date` 오름차순, 같으면 `order` 오름차순 |
-| `link` | 없으면 `null` |
+#### 에러
 
----
+| code | HTTP | 상황 | field |
+| --- | --- | --- | --- |
+| `INVALID_INPUT` | 400 | 필수 날짜 없음, 날짜 형식 오류 | `contractDate`, `balanceDate`, `moveInDate` |
+| `INVALID_INPUT` | 400 | 날짜 순서가 거꾸로 | `balanceDate` 또는 `moveInDate` |
+| `INVALID_INPUT` | 400 | `termMonths`가 1 미만 | `termMonths` |
+
+## 5. 서버 API가 없는 기능 (프론트 데모)
+
+| 기능 | 저장 위치 | 비고 |
+| --- | --- | --- |
+| 회원가입·로그인·로그아웃 | 브라우저 localStorage (비밀번호는 salt + PBKDF2) · 로그인 상태는 sessionStorage | AC-01. 서버 인증 없음 |
+| 진단 기록 저장 | 브라우저 localStorage, 계정별 최근 10건 | AC-03. 2번 응답을 받은 뒤 FE가 요약만 저장 (날짜, 보증금·시세, 등급, 점수) |
+| 마이페이지 | 위 기록 읽기 | AC-04. 로그인 필요 |
+
+서버로 이름·이메일·주소를 보내지 않는다 (NFR-06).
 
 ## 변경 이력
 
-| 버전 | 날짜 | 내용 | 누가 |
-|---|---|---|---|
-| v0.1 | 11/9 | 초안 | |
+| 버전 | 날짜 | 내용 | 작성 |
+| --- | --- | --- | --- |
+| v0.1 | 11/9 | 초안 (예시 JSON 중심) | 이상혁 |
+| v1.0 | 11/9 | 명세서 형식으로 정리: 공통 규칙, API 목록, 필드 표, 에러 표, 요구사항 ID, 프론트 데모 기능. API 모양은 v0.1과 같음 | 이상혁 |
