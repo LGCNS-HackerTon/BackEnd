@@ -5,6 +5,7 @@ import com.lgcns.jeonse.domain.diagnosis.advice.AdviceService;
 import com.lgcns.jeonse.domain.diagnosis.dto.DiagnosisRequestDTO;
 import com.lgcns.jeonse.domain.diagnosis.dto.DiagnosisResponseDTO;
 import com.lgcns.jeonse.domain.diagnosis.dto.ScoreResult;
+import com.lgcns.jeonse.domain.diagnosis.entity.Diagnosis;
 import com.lgcns.jeonse.domain.diagnosis.entity.RiskGrade;
 import com.lgcns.jeonse.domain.question.entity.RegistryQuestion;
 import com.lgcns.jeonse.domain.question.repository.RegistryQuestionRepository;
@@ -28,20 +29,41 @@ public class DiagnosisService {
 
     private final RegistryQuestionRepository questionRepository;
     private final AdviceService adviceService;
+    private final DiagnosisHistoryService historyService;
 
-    public DiagnosisService(RegistryQuestionRepository questionRepository, AdviceService adviceService) {
+    public DiagnosisService(RegistryQuestionRepository questionRepository, AdviceService adviceService,
+                            DiagnosisHistoryService historyService) {
         this.questionRepository = questionRepository;
         this.adviceService = adviceService;
+        this.historyService = historyService;
     }
 
     // 비로그인 진단: 저장하지 않으므로 id는 null, createdAt은 응답 시각 (docs/03 6절)
-    public DiagnosisResponseDTO diagnose(DiagnosisRequestDTO request) {
+    public DiagnosisResponseDTO diagnose(DiagnosisRequestDTO request) { return diagnose(request, null); }
+
+    // memberId가 있으면(로그인 회원) 진단 1건과 답 10개를 그 회원 기록으로 저장한다 (docs/03 2번)
+    public DiagnosisResponseDTO diagnose(DiagnosisRequestDTO request, Long memberId) {
         ScoreResult result = calculate(request);
         AdviceResult advice = adviceService.advise(result);
-        return new DiagnosisResponseDTO(null, result.score(), result.grade().name(), advice.gradeLabel(),
+        if (memberId == null) return response(null, LocalDateTime.now().withNano(0), result, advice);
+        Diagnosis saved = historyService.save(memberId, request, result, advice);
+        return response(saved.getId(), saved.getCreatedAt(), result, advice);
+    }
+
+    // 재평가 (docs/03 10번): 같은 규칙으로 다시 계산해 내 기록을 덮어쓴다. 없는 기록이면 AI를 부르기 전에 404
+    public DiagnosisResponseDTO reevaluate(long memberId, long id, DiagnosisRequestDTO request) {
+        historyService.owned(memberId, id);
+        ScoreResult result = calculate(request);
+        AdviceResult advice = adviceService.advise(result);
+        Diagnosis saved = historyService.overwrite(memberId, id, request, result, advice);
+        return response(saved.getId(), saved.getCreatedAt(), result, advice);
+    }
+
+    private static DiagnosisResponseDTO response(Long id, LocalDateTime createdAt, ScoreResult result,
+                                                 AdviceResult advice) {
+        return new DiagnosisResponseDTO(id, result.score(), result.grade().name(), advice.gradeLabel(),
                 advice.gradeMessage(), result.debtRatio(), advice.factors(), advice.commonAdvice(),
-                advice.aiExplanation(), advice.aiUsed(), advice.warnings(), advice.disclaimer(),
-                LocalDateTime.now().withNano(0));
+                advice.aiExplanation(), advice.aiUsed(), advice.warnings(), advice.disclaimer(), createdAt);
     }
 
     // 규칙 기반 점수 계산 (docs/01 1~3절). 같은 입력은 항상 같은 결과

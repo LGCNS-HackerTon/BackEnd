@@ -31,4 +31,7 @@ public class DiagnosisAnswer {
     public DiagnosisAnswer(Diagnosis diagnosis, String questionCode, String answer, int score) {
         this.diagnosis = diagnosis; this.questionCode = questionCode; this.answer = answer; this.score = score;
     }
+
+    // 재평가 때 행을 지우고 다시 넣지 않고 값만 바꾼다 (uk_diag_question 충돌 방지)
+    public void overwrite(String answer, int score) { this.answer = answer; this.score = score; }
 }

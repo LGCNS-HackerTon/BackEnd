@@ -13,8 +13,6 @@ import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 // 로그인 회원 진단만 저장한다 (docs/03 6절). 컬럼은 db/schema.sql diagnoses와 같다
 @Entity
@@ -36,15 +34,31 @@ public class Diagnosis {
     @Column(name = "risk_grade", nullable = false, columnDefinition = "VARCHAR(10)") private RiskGrade riskGrade;
     @Column(name = "ai_explanation", nullable = false, columnDefinition = "TEXT") private String aiExplanation;
     @Column(name = "ai_used", nullable = false) private boolean aiUsed;
-    @CreationTimestamp @Column(name = "created_at", nullable = false, updatable = false) private LocalDateTime createdAt;
-    @UpdateTimestamp @Column(name = "updated_at", nullable = false) private LocalDateTime updatedAt;
+    // 시각은 앱이 정한다 (docs/04): 저장 때 created_at = updated_at, 재평가 때만 updated_at이 바뀐다
+    @Column(name = "created_at", nullable = false, updatable = false) private LocalDateTime createdAt;
+    @Column(name = "updated_at", nullable = false) private LocalDateTime updatedAt;
 
     public Diagnosis(Long userId, String propertyName, int deposit, int salePrice, int mortgageMax, int seniorDeposit,
                      boolean seniorUnknown, BigDecimal debtRatio, int riskScore, RiskGrade riskGrade,
                      String aiExplanation, boolean aiUsed) {
-        this.userId = userId; this.propertyName = propertyName; this.deposit = deposit; this.salePrice = salePrice;
+        this.userId = userId;
+        overwrite(propertyName, deposit, salePrice, mortgageMax, seniorDeposit, seniorUnknown, debtRatio, riskScore,
+                riskGrade, aiExplanation, aiUsed);
+        this.createdAt = this.updatedAt;
+    }
+
+    // 재평가(docs/03 10번): 같은 행에 새 결과를 덮어쓴다. id·userId·createdAt은 그대로
+    public void overwrite(String propertyName, int deposit, int salePrice, int mortgageMax, int seniorDeposit,
+                          boolean seniorUnknown, BigDecimal debtRatio, int riskScore, RiskGrade riskGrade,
+                          String aiExplanation, boolean aiUsed) {
+        this.propertyName = propertyName; this.deposit = deposit; this.salePrice = salePrice;
         this.mortgageMax = mortgageMax; this.seniorDeposit = seniorDeposit; this.seniorUnknown = seniorUnknown;
         this.debtRatio = debtRatio; this.riskScore = riskScore; this.riskGrade = riskGrade;
         this.aiExplanation = aiExplanation; this.aiUsed = aiUsed;
+        this.updatedAt = LocalDateTime.now().withNano(0); // MySQL DATETIME은 초 단위라 맞춰 둔다
     }
+
+    // 재평가한 적 없으면 null (docs/03 9번).
+    // shortcut: 저장과 같은 초에 재평가하면 null로 보인다. 정확히 구분해야 하면 재평가 여부 컬럼을 추가
+    public LocalDateTime getReevaluatedAt() { return updatedAt.equals(createdAt) ? null : updatedAt; }
 }

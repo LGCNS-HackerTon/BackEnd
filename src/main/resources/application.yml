@@ -36,5 +36,9 @@ jwt:
   # 비우면 서버 시작 때 임시 키를 만든다 (재시작하면 기존 토큰 무효). 32바이트 이상
   secret: ${JWT_SECRET:}
 
+demo:
+  # 서버 시작 때 데모 회원(demo@example.com)이 없으면 이 비밀번호로 만든다 (FE "데모 계정으로 시작")
+  password: ${DEMO_PASSWORD:jeonse-demo-2026}
+
 server:
   port: 8080
