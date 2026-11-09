@@ -1,4 +1,4 @@
-package com.lgcns.jeonse.common;
+package com.lgcns.jeonse.global.exception;
 
 public class InvalidInputException extends RuntimeException {
     private final String field;

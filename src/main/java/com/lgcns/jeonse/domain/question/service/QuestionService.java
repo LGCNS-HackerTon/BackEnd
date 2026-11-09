@@ -1,6 +1,7 @@
-package com.lgcns.jeonse.question;
+package com.lgcns.jeonse.domain.question.service;
 
-import com.lgcns.jeonse.question.dto.QuestionResponse;
+import com.lgcns.jeonse.domain.question.dto.QuestionResponseDTO;
+import com.lgcns.jeonse.domain.question.repository.RegistryQuestionRepository;
 import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Service;
@@ -15,11 +16,11 @@ public class QuestionService {
 
     public QuestionService(RegistryQuestionRepository repository) { this.repository = repository; }
 
-    public QuestionResponse getQuestions() {
-        List<QuestionResponse.QuestionItem> items = repository.findAllByOrderBySortOrderAsc().stream()
-                .map(q -> new QuestionResponse.QuestionItem(q.getCode(), q.getSection(),
+    public QuestionResponseDTO getQuestions() {
+        List<QuestionResponseDTO.QuestionItem> items = repository.findAllByOrderBySortOrderAsc().stream()
+                .map(q -> new QuestionResponseDTO.QuestionItem(q.getCode(), q.getSection(),
                         SECTION_NAMES.get(q.getSection()), q.getSortOrder(), q.getText(), q.getHelp(), q.isNeedsAmount()))
                 .toList();
-        return new QuestionResponse(items);
+        return new QuestionResponseDTO(items);
     }
 }

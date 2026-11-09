@@ -1,4 +1,4 @@
-package com.lgcns.jeonse.question;
+package com.lgcns.jeonse.domain.question.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

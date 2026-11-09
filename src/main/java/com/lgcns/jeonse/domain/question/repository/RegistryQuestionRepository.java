@@ -1,5 +1,6 @@
-package com.lgcns.jeonse.question;
+package com.lgcns.jeonse.domain.question.repository;
 
+import com.lgcns.jeonse.domain.question.entity.RegistryQuestion;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
