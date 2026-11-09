@@ -25,7 +25,8 @@ PR마다 CI가 `./gradlew build`(테스트 포함)를 실행합니다. CI는 MyS
 | --- | --- | --- |
 | `DB_URL` | | 예: `jdbc:mysql://localhost:3306/jeonse`. 없으면 H2 |
 | `DB_USERNAME`, `DB_PASSWORD` | | MySQL 계정 |
-| `OCR_API_KEY` | | OCR 엔진 키 (BE2가 엔진을 정하면 사용). 없으면 OCR API는 422 `OCR_UNREADABLE`로 실패하고, 화면은 직접 답하기로 진행합니다 |
+| `CLOVA_OCR_URL`, `CLOVA_OCR_SECRET` | | Naver CLOVA OCR 호출 정보. 없으면 OCR API는 422 `OCR_UNREADABLE`로 실패하고 화면은 직접 답하기로 진행합니다 |
+| `JWT_SECRET` | | 회원 인증 JWT 서명 키 |
 
 실제 값은 `.env`에만 두고 커밋하지 않습니다.
 

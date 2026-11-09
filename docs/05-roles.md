@@ -93,7 +93,7 @@
 - [ ] 템플릿 `aiExplanation` 만들기, `aiUsed: false`
 - [ ] 선순위 보증금이 없으면 `warnings`에 문장 추가
 - [ ] (17시 이후) AI 연동: 타임아웃 5초, 실패하면 템플릿. 키는 `.env`
-- [ ] **OCR 엔진 결정** (docs/09 5절 후보) → decision-log **D9**에 엔진·서류 외부 전송 여부 기록
+- [x] **OCR 엔진 결정: Naver CLOVA OCR** → decision-log D9 기록
 - [ ] `ocr` 패키지에 `POST /api/ocr/registry` (docs/03 5번): `address` + `registry` + `buildingLedger`(선택) multipart
 - [ ] 응답은 질문 **10개 전부** `CONFIRMED/UNCONFIRMED`. 판독 못 한 건 `NO`가 아니라 `UNCONFIRMED`
 - [ ] `application.yml`에 업로드 10MB 설정 (`spring.servlet.multipart.max-file-size`, `max-request-size`. 기본 1MB)

@@ -53,7 +53,7 @@
 
 | 저장소 | 변수 |
 |---|---|
-| BackEnd | `DB_URL=jdbc:mysql://localhost:3306/jeonse`, `DB_USERNAME`, `DB_PASSWORD`, `OCR_API_KEY`(엔진에 따라) |
+| BackEnd | `DB_URL=jdbc:mysql://localhost:3306/jeonse`, `DB_USERNAME`, `DB_PASSWORD`, `CLOVA_OCR_URL`, `CLOVA_OCR_SECRET`, JWT 비밀값 |
 | FrontEnd | `VITE_API_BASE_URL=http://localhost:8080`, `VITE_USE_MOCK=true` (BE 연결 전엔 true) |
 
 - CORS는 `http://localhost:5173`을 허용한다 (BE3)
