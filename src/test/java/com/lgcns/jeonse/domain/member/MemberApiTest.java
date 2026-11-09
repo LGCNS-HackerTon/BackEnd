@@ -126,6 +126,13 @@ class MemberApiTest {
     }
 
     @Test
+    void 긴_JWT_SECRET이어도_HS256으로_서명한다() {
+        String token = new JwtProvider("x".repeat(64)).issue(1);
+        String header = new String(java.util.Base64.getUrlDecoder().decode(token.split("\\.")[0]));
+        org.assertj.core.api.Assertions.assertThat(header).contains("\"alg\":\"HS256\"");
+    }
+
+    @Test
     void 토큰_선택_API는_토큰이_없으면_비회원으로_통과한다() throws Exception {
         mvc.perform(get("/test/optional-auth")).andExpect(status().isOk()).andExpect(content().string("null"));
 

@@ -37,7 +37,7 @@ public class JwtProvider {
                 .subject(String.valueOf(memberId))
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(VALIDITY)))
-                .signWith(key)
+                .signWith(key, Jwts.SIG.HS256) // 키 길이와 상관없이 docs/03 6.1의 HS256으로 고정
                 .compact();
     }
 
