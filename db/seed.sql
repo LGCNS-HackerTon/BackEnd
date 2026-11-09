@@ -1,4 +1,4 @@
--- jeonse DB 기본 데이터 (MySQL 8 기준, MariaDB 10.5 이상에서도 실행됨)
+-- jeonse DB 기본 데이터 (MySQL 8.0.16 이상 기준, MariaDB 10.5 이상에서도 실행됨)
 -- 원본: docs/01-registry-questions.md (질문 10개), docs/02-schedule-rules.md (할 일 14개)
 -- schema.sql 다음에 실행한다. 여러 번 실행해도 같은 행을 덮어써서 중복되지 않는다.
 -- ON DUPLICATE KEY UPDATE에서 VALUES(컬럼)을 쓰는 이유: MySQL 8 전용 문법(AS new)은 MariaDB에서 실행되지 않는다.
@@ -8,12 +8,22 @@ USE jeonse;
 
 SET NAMES utf8mb4;
 
+-- 배치 모드에서 실행한다. 오류로 연결이 닫히면 임시 순서 변경도 롤백된다.
+-- 임시 순서가 INT 범위를 넘으면 0을 대입해 순서 CHECK로 중단한다.
+START TRANSACTION;
+
 -- ============================================================
 -- 1. 등기부 질문 10개 (docs/01 1절 + 4절)
 --    help는 해요체. risky_answer: 이 답이면 risk_score를 더한다 (UNKNOWN은 항상 위험 쪽)
 --    B1_MORTGAGE는 YES면 부채비율로 계산하고, risk_score 10은 UNKNOWN일 때만 쓴다
 --    special_clause가 NULL이면 화면에 "계약 보류를 권해요"를 보여준다
 -- ============================================================
+-- 기존 순서를 잠시 뒤로 비켜 둔다. 질문 코드(PK)와 순서(uk_question_order)가 서로 다른 행에서 겹치면
+-- ON DUPLICATE KEY UPDATE가 순서가 같은 엉뚱한 행을 덮어써서, 빠진 질문이 복원되지 않기 때문이다.
+-- seed 범위(1~10) 안의 행만 기존 최대 순서와 seed 범위보다 뒤로 옮긴다.
+SET @question_shift = (SELECT GREATEST(COALESCE(MAX(sort_order), 0), 10) FROM registry_questions);
+UPDATE registry_questions SET sort_order = CASE WHEN sort_order + @question_shift <= 2147483647 THEN sort_order + @question_shift ELSE 0 END WHERE sort_order <= 10;
+
 INSERT INTO registry_questions
     (code, section, sort_order, text, help, risky_answer, risk_score, needs_amount, factor_title, ask_agent, special_clause)
 VALUES
@@ -113,6 +123,10 @@ ON DUPLICATE KEY UPDATE
 --    날짜 = anchor 날짜 + offset_days. important는 9번·11번
 --    링크는 한 줄에 하나, 여러 개면 첫 번째. 링크 표에 없는 서비스(은행)는 NULL
 -- ============================================================
+-- 질문과 같은 이유로 기존 순서를 잠시 비켜 둔다 (id(PK)와 uk_checklist_order가 다른 행에서 겹치는 경우)
+SET @checklist_shift = (SELECT GREATEST(COALESCE(MAX(sort_order), 0), 14) FROM checklist_items);
+UPDATE checklist_items SET sort_order = CASE WHEN sort_order + @checklist_shift <= 2147483647 THEN sort_order + @checklist_shift ELSE 0 END WHERE sort_order <= 14;
+
 INSERT INTO checklist_items
     (id, sort_order, anchor, offset_days, title, reason, important, link_name, link_url)
 VALUES
@@ -181,3 +195,5 @@ ON DUPLICATE KEY UPDATE
     important   = VALUES(important),
     link_name   = VALUES(link_name),
     link_url    = VALUES(link_url);
+
+COMMIT;
