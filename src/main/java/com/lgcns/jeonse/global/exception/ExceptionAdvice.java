@@ -3,6 +3,7 @@ package com.lgcns.jeonse.global.exception;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.lgcns.jeonse.global.apiPayload.ApiError;
 import java.time.LocalDate;
+import org.apache.tomcat.util.http.fileupload.impl.FileSizeLimitExceededException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @RestControllerAdvice
 public class ExceptionAdvice {
@@ -45,6 +47,22 @@ public class ExceptionAdvice {
     public ResponseEntity<ApiError> apiException(ApiException exception) {
         return ResponseEntity.status(exception.getStatus()).body(new ApiError(
                 new ApiError.ErrorDetail(exception.getCode(), exception.getMessage(), exception.getField())));
+    }
+
+    @ExceptionHandler(OcrUnreadableException.class)
+    public ResponseEntity<ApiError> ocrUnreadable(OcrUnreadableException exception) {
+        return ResponseEntity.unprocessableEntity().body(new ApiError(
+                new ApiError.ErrorDetail("OCR_UNREADABLE", exception.getMessage(), null)));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiError> fileTooLarge(MaxUploadSizeExceededException exception) {
+        String field = null; // 파일 하나가 넘쳤을 때만 Tomcat이 필드 이름을 알려 준다
+        for (Throwable t = exception; t != null; t = t.getCause()) {
+            if (t instanceof FileSizeLimitExceededException e) field = e.getFieldName();
+        }
+        return ResponseEntity.badRequest().body(new ApiError(
+                new ApiError.ErrorDetail("INVALID_INPUT", "서류는 파일당 10MB 이하로 올려 주세요.", field)));
     }
 
     @ExceptionHandler(Exception.class)
