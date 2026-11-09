@@ -36,17 +36,17 @@ PR마다 CI가 `./gradlew build`(테스트 포함)를 실행합니다. CI는 MyS
 
 | No | 메서드 | 경로 | 내용 | 순위 | 담당 | 패키지 |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | GET | `/api/questions` | 등기부 질문 10개 | P0 | 문한일 | `question` |
-| 2 | POST | `/api/diagnoses` | 규칙 기반 점수·등급 + 위험 항목 안내 | P0 | 송석주, 최다인 | `diagnosis`, `diagnosis.advice` |
-| 4 | GET | `/api/schedule` | 계약 일정표 16개 | P0 | 문한일 | `schedule` |
-| 5 | POST | `/api/ocr/registry` | 주소 + 서류로 질문별 확인 여부·답 (multipart) | P1 | 최다인 | `ocr` |
+| 1 | GET | `/api/questions` | 등기부 질문 10개 | P0 | 문한일 | `domain.question` |
+| 2 | POST | `/api/diagnoses` | 규칙 기반 점수·등급 + 위험 항목 안내 | P0 | 송석주, 최다인 | `domain.diagnosis`, `domain.diagnosis.advice` |
+| 4 | GET | `/api/schedule` | 계약 일정표 16개 | P0 | 문한일 | `domain.schedule` |
+| 5 | POST | `/api/ocr/registry` | 주소 + 서류로 질문별 확인 여부·답 (multipart) | P1 | 최다인 | `domain.ocr` |
 
-공통 에러, 예외 처리, CORS는 `common` 패키지(문한일)에 둡니다.
+공통 에러, 예외 처리, CORS는 `global` 패키지(문한일)에 둡니다. 기능 코드는 `domain/<기능>/{controller,service,repository,entity,dto}`로 나눕니다 (docs/AGENTS.md).
 
 ## 백엔드에서 꼭 지킬 것
 
 1. **점수·등급은 규칙 기반으로만** 계산합니다 (docs/01). AI·OCR은 점수를 정하지 않습니다
-2. 모든 에러는 `{"error": {"code", "message", "field"}}` 형식입니다 (`common/ApiError`)
+2. 모든 에러는 `{"error": {"code", "message", "field"}}` 형식입니다 (`global/apiPayload/ApiError`)
 3. 금액은 **만원 단위 정수**, 날짜는 `YYYY-MM-DD`
 4. **OCR 서류와 주소는 저장하지 않습니다.** 파일을 디스크·DB에 쓰지 않고, 로그에 소유자 이름·주소·파일 내용을 남기지 않습니다 (docs/08 NFR-06)
 5. OCR이 판독하지 못한 질문은 `NO`가 아니라 `UNCONFIRMED`로 돌려줍니다

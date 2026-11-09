@@ -1,11 +1,13 @@
-package com.lgcns.jeonse.question;
+package com.lgcns.jeonse.domain.question.init;
 
+import com.lgcns.jeonse.domain.question.entity.RegistryQuestion;
+import com.lgcns.jeonse.domain.question.repository.RegistryQuestionRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class QuestionSeedDataConfig {
+public class QuestionDataInitializer {
     private static final String GUARANTEE = "전세보증금반환보증 가입이 거절될 경우 본 계약은 무효로 하며, 임대인은 받은 계약금을 즉시 반환한다.";
 
     @Bean

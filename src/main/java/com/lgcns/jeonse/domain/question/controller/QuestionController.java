@@ -1,6 +1,7 @@
-package com.lgcns.jeonse.question;
+package com.lgcns.jeonse.domain.question.controller;
 
-import com.lgcns.jeonse.question.dto.QuestionResponse;
+import com.lgcns.jeonse.domain.question.dto.QuestionResponseDTO;
+import com.lgcns.jeonse.domain.question.service.QuestionService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -10,5 +11,5 @@ import org.springframework.web.bind.annotation.RestController;
 public class QuestionController {
     private final QuestionService service;
     public QuestionController(QuestionService service) { this.service = service; }
-    @GetMapping public QuestionResponse getQuestions() { return service.getQuestions(); }
+    @GetMapping public QuestionResponseDTO getQuestions() { return service.getQuestions(); }
 }
