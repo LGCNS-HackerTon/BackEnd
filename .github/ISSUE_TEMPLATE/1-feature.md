@@ -1,7 +1,7 @@
 ---
 name: 기능 개발
 about: 기능 하나를 만들 때 (1~2시간 크기)
-title: "[역할] 할 일"
+title: "feat : 할 일"
 labels: enhancement
 assignees: ''
 ---
