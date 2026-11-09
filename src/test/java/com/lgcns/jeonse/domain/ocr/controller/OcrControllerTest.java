@@ -3,6 +3,7 @@ package com.lgcns.jeonse.domain.ocr.controller;
 import com.lgcns.jeonse.domain.ocr.client.ClovaOcrClient;
 import com.lgcns.jeonse.domain.ocr.service.OcrService;
 import com.lgcns.jeonse.global.exception.OcrUnreadableException;
+import com.lgcns.jeonse.global.security.JwtProvider;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -37,6 +38,7 @@ class OcrControllerTest {
 
     @Autowired MockMvc mvc;
     @MockitoBean ClovaOcrClient clova;
+    @MockitoBean JwtProvider jwtProvider; // WebConfig의 로그인 회원 resolver가 필요로 한다
 
     static MockMultipartFile file(String name, byte[] bytes) {
         return new MockMultipartFile(name, name + ".bin", "application/octet-stream", bytes);
