@@ -2,7 +2,7 @@
 
 > **목표: 오늘(11/9) 17:00 중간 공유 때 메인 기능 2개가 실제로 돌아가는 전체 데모.**
 > 내일 오전은 AI 설명, 사용자 테스트, 버그 수정, 발표 준비에 쓴다.
-> AI에게 일 시킬 때는 **AGENTS.md + 내 역할의 "AI 시작 문장"**을 같이 준다.
+> AI에게 일 시킬 때는 **docs/AGENTS.md + 내 역할의 "AI 시작 문장"**을 같이 준다.
 
 ## 1. 오늘 만드는 것 (메인 기능 2개)
 
@@ -67,7 +67,7 @@
 ### 공통 (전원)
 - [ ] `git config` 이메일을 GitHub 계정 이메일로 맞추기 (docs/07 2절)
 - [ ] 내 저장소 clone, 이슈 만들고 브랜치 따기 (`be1/3-diagnosis-score`처럼 `역할/이슈번호-기능`)
-- [ ] AI에게 AGENTS.md + 내 역할 시작 문장 주기
+- [ ] AI에게 docs/AGENTS.md + 내 역할 시작 문장 주기
 - [ ] 1시간에 한 번은 PR 올리기 (모아서 한 번에 올리지 않기)
 - [ ] 15분 넘게 막히면 바로 단톡에 공유
 - [ ] API 모양을 바꾸고 싶으면 **계약 변경 요청 이슈**부터
@@ -88,7 +88,7 @@
 - [ ] (17시 이후) AI 연동: 타임아웃 5초, 실패하면 템플릿. 키는 `.env`
 
 ### BE3 뼈대·일정 (문한일)
-- [ ] **13:40까지** 뼈대 PR: 실행되는 서버, 에러 응답 형식, CORS(`http://localhost:5173` 허용), AGENTS.md 패키지 구조
+- [ ] **13:40까지** 뼈대 PR: 실행되는 서버, 에러 응답 형식, CORS(`http://localhost:5173` 허용), docs/AGENTS.md 패키지 구조
 - [ ] `.env.example`, 실행 방법을 README에 3줄
 - [ ] `GET /api/questions` (seed 데이터 읽기)
 - [ ] `GET /api/schedule`: 날짜 계산, `daysLeft`, `status`, 정렬
@@ -132,20 +132,20 @@
 4. PR은 **팀장이 머지.** 같은 영역 한 명이 훑어봤으면 바로 머지 (오늘은 리뷰보다 속도)
 5. 막히면 15분 넘게 혼자 붙잡지 말기
 6. 결정이 바뀌면 이지원(QA)에게 알려서 decision-log.md에 한 줄
-7. `AGENTS.md`와 `docs/`는 **BackEnd 저장소가 원본.** 고치면 팀장이 FrontEnd에도 똑같이 반영
+7. `docs/AGENTS.md`와 `docs/`는 **BackEnd 저장소가 원본.** 고치면 팀장이 FrontEnd에도 똑같이 반영
 
 ## 7. 역할별 AI 시작 문장
 
-AGENTS.md를 첨부하고 시작.
+docs/AGENTS.md를 첨부하고 시작.
 
 | 역할 | AI 시작 문장 |
 |---|---|
-| BE1 | "AGENTS.md와 docs/01, docs/03을 읽어. 나는 BE1이야. Spring Boot 3(Java 17, Gradle, JPA)으로 docs/01 2~3절 점수 규칙을 계산하는 함수와, 데모 케이스 A/B/C(0·70·40점) 테스트를 먼저 만들어줘." |
-| BE2 | "AGENTS.md와 docs/01 4절, docs/03 2절을 읽어. 나는 BE2야. 진단 점수 결과를 받아 factors, commonAdvice, 템플릿 aiExplanation, warnings를 docs/03 모양 그대로 만드는 코드를 Spring Boot 3(Java 17, Gradle, JPA)으로 만들어줘. 오늘은 AI를 부르지 않고 aiUsed=false." |
-| BE3 | "AGENTS.md와 docs/02, docs/03을 읽어. 나는 BE3야. Spring Boot 3(Java 17, Gradle, JPA) 프로젝트 뼈대(AGENTS.md 패키지 구조, 에러 응답 형식, localhost:5173 CORS 허용)와 GET /api/questions, GET /api/schedule을 docs/03 그대로 만들어줘." |
-| FE 뼈대 | "AGENTS.md와 docs/03, docs/06을 읽어. React + Vite(JavaScript, Tailwind)로 AGENTS.md 폴더 구조대로 뼈대를 만들고, 라우팅 4개와 API 클라이언트, docs/03 예시 JSON을 돌려주는 Mock 모드(VITE_USE_MOCK)를 만들어줘." |
-| FE S2 | "AGENTS.md와 docs/01 1~2절, docs/03 1~2절, docs/06 S2를 읽어. 질문을 섹션 순서대로 하나씩 보여주고 예/아니오/모르겠어요로 답하는 화면과 금액 입력 화면을 만들어줘. 마지막에 POST /api/diagnoses 요청 모양으로 모아줘." |
-| FE S3 | "AGENTS.md와 docs/03 2절, docs/06 S3를 읽어. 진단 응답 JSON으로 결과 화면을 만들어줘. 등급 색, factors 목록, 중개사 질문, 특약 복사 버튼, 면책 문구, warnings 표시가 필요해." |
-| FE S4 | "AGENTS.md와 docs/02, docs/03 4절, docs/06 S4를 읽어. 날짜 입력 → GET /api/schedule 결과를 지난 일/오늘/다가오는 일로 묶어 보여주는 화면을 만들어줘. important=true는 빨간 강조." |
-| DB | "AGENTS.md와 docs/01, docs/02, docs/04를 읽어. 나는 DB 담당이야. docs/04 DDL을 MySQL 8에 맞게 확인하고, docs/01 질문 10개(설명은 해요체로)와 docs/02 할 일 14개를 seed.sql로 만들어줘." |
-| QA | "AGENTS.md와 docs/01, docs/03을 읽어. 나는 QA야. 데모 케이스 A/B/C와 입력 오류 케이스로 테스트 시나리오 표를 만들고, 17시 데모 대본을 케이스 B 기준으로 써줘." |
+| BE1 | "docs/AGENTS.md와 docs/01, docs/03을 읽어. 나는 BE1이야. Spring Boot 3(Java 17, Gradle, JPA)으로 docs/01 2~3절 점수 규칙을 계산하는 함수와, 데모 케이스 A/B/C(0·70·40점) 테스트를 먼저 만들어줘." |
+| BE2 | "docs/AGENTS.md와 docs/01 4절, docs/03 2절을 읽어. 나는 BE2야. 진단 점수 결과를 받아 factors, commonAdvice, 템플릿 aiExplanation, warnings를 docs/03 모양 그대로 만드는 코드를 Spring Boot 3(Java 17, Gradle, JPA)으로 만들어줘. 오늘은 AI를 부르지 않고 aiUsed=false." |
+| BE3 | "docs/AGENTS.md와 docs/02, docs/03을 읽어. 나는 BE3야. Spring Boot 3(Java 17, Gradle, JPA) 프로젝트 뼈대(docs/AGENTS.md 패키지 구조, 에러 응답 형식, localhost:5173 CORS 허용)와 GET /api/questions, GET /api/schedule을 docs/03 그대로 만들어줘." |
+| FE 뼈대 | "docs/AGENTS.md와 docs/03, docs/06을 읽어. React + Vite(JavaScript, Tailwind)로 docs/AGENTS.md 폴더 구조대로 뼈대를 만들고, 라우팅 4개와 API 클라이언트, docs/03 예시 JSON을 돌려주는 Mock 모드(VITE_USE_MOCK)를 만들어줘." |
+| FE S2 | "docs/AGENTS.md와 docs/01 1~2절, docs/03 1~2절, docs/06 S2를 읽어. 질문을 섹션 순서대로 하나씩 보여주고 예/아니오/모르겠어요로 답하는 화면과 금액 입력 화면을 만들어줘. 마지막에 POST /api/diagnoses 요청 모양으로 모아줘." |
+| FE S3 | "docs/AGENTS.md와 docs/03 2절, docs/06 S3를 읽어. 진단 응답 JSON으로 결과 화면을 만들어줘. 등급 색, factors 목록, 중개사 질문, 특약 복사 버튼, 면책 문구, warnings 표시가 필요해." |
+| FE S4 | "docs/AGENTS.md와 docs/02, docs/03 4절, docs/06 S4를 읽어. 날짜 입력 → GET /api/schedule 결과를 지난 일/오늘/다가오는 일로 묶어 보여주는 화면을 만들어줘. important=true는 빨간 강조." |
+| DB | "docs/AGENTS.md와 docs/01, docs/02, docs/04를 읽어. 나는 DB 담당이야. docs/04 DDL을 MySQL 8에 맞게 확인하고, docs/01 질문 10개(설명은 해요체로)와 docs/02 할 일 14개를 seed.sql로 만들어줘." |
+| QA | "docs/AGENTS.md와 docs/01, docs/03을 읽어. 나는 QA야. 데모 케이스 A/B/C와 입력 오류 케이스로 테스트 시나리오 표를 만들고, 17시 데모 대본을 케이스 B 기준으로 써줘." |

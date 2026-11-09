@@ -1,7 +1,7 @@
 # 1팀 프로젝트 공통 컨텍스트 (모든 AI가 먼저 읽는 파일)
 
-> **팀원에게**: AI(Claude, ChatGPT, Cursor 등)에게 일을 시킬 때 **이 파일을 먼저 첨부하거나 붙여넣고** 시작해.
-> Claude Code는 `CLAUDE.md`를 통해, Cursor·Codex는 `AGENTS.md`를 자동으로 읽어.
+> **팀원에게**: AI(Claude, ChatGPT, Cursor 등)에게 일을 시킬 때 **이 파일(`docs/AGENTS.md`)을 먼저 첨부하거나 붙여넣고** 시작해.
+> Claude Code는 저장소 맨 위 `CLAUDE.md`를 통해 자동으로 읽어. 다른 도구는 이 파일을 직접 첨부해.
 > 모두 같은 자료를 보고 만들어야 코드가 서로 맞물려.
 
 ## 1. 프로젝트 한 줄 요약
@@ -60,14 +60,15 @@
 
 | 문서 | 내용 | 주로 보는 사람 |
 |---|---|---|
-| [docs/01-registry-questions.md](docs/01-registry-questions.md) | 등기부 질문 10개, 점수 규칙, 등급, 행동 안내 템플릿, 데모 케이스 | 전원 |
-| [docs/02-schedule-rules.md](docs/02-schedule-rules.md) | 계약 일정표 D-day 규칙 14개 | BE, FE, DB |
-| [docs/03-api-contract.md](docs/03-api-contract.md) | **API 요청·응답 JSON** (FE와 BE의 약속) | BE, FE, QA |
-| [docs/04-db-schema.md](docs/04-db-schema.md) | 테이블 4개, DDL 초안 | DB, BE |
-| [docs/06-service-flow.md](docs/06-service-flow.md) | **화면 흐름, 화면 경로**, 화면별 내용, 시스템·에러 흐름 | FE, BE, QA |
-| [docs/05-roles.md](docs/05-roles.md) | 역할 분담, 오늘 시간표, **역할별 체크리스트** | 전원 |
-| [docs/07-git-rules.md](docs/07-git-rules.md) | **GitHub 협업 규칙**: 이슈, 브랜치, 커밋, PR, 충돌 해결 | 전원 |
-| [docs/decision-log.md](docs/decision-log.md) | 결정 기록 (처음 생각 → 확인한 내용 → 바뀐 판단) | 전원 |
+| [docs/01-registry-questions.md](01-registry-questions.md) | 등기부 질문 10개, 점수 규칙, 등급, 행동 안내 템플릿, 데모 케이스 | 전원 |
+| [docs/02-schedule-rules.md](02-schedule-rules.md) | 계약 일정표 D-day 규칙 14개 | BE, FE, DB |
+| [docs/03-api-contract.md](03-api-contract.md) | **API 명세서**: 공통 규칙, API 목록, 요청·응답 필드, 에러 (FE와 BE의 약속) | BE, FE, QA |
+| [docs/04-db-schema.md](04-db-schema.md) | 테이블 4개, DDL 초안 | DB, BE |
+| [docs/06-service-flow.md](06-service-flow.md) | **화면 흐름, 화면 경로**, 화면별 내용, 시스템·에러 흐름 | FE, BE, QA |
+| [docs/05-roles.md](05-roles.md) | 역할 분담, 오늘 시간표, **역할별 체크리스트** | 전원 |
+| [docs/08-requirements.md](08-requirements.md) | **요구사항 명세서**: 기능 34개·비기능 10개, 우선순위(P0/P1/P2), 담당 | 전원 |
+| [docs/07-git-rules.md](07-git-rules.md) | **GitHub 협업 규칙**: 이슈, 브랜치, 커밋, PR, 충돌 해결 | 전원 |
+| [docs/decision-log.md](decision-log.md) | 결정 기록 (처음 생각 → 확인한 내용 → 바뀐 판단) | 전원 |
 
 ## 4. AI에게 일 시킬 때 지켜야 할 규칙
 
@@ -109,8 +110,9 @@ GitHub Organization: https://github.com/LGCNS-HackerTon
 
 | 저장소 | 누가 | 안에 들어가는 것 |
 |---|---|---|
-| [BackEnd](https://github.com/LGCNS-HackerTon/BackEnd) | BE 3명, DB | 백엔드 코드, `db/` (DDL, seed), `AGENTS.md`, `CLAUDE.md`, `docs/` |
-| [FrontEnd](https://github.com/LGCNS-HackerTon/FrontEnd) | FE 4명 | 프론트 코드, `AGENTS.md`, `CLAUDE.md`, `docs/` |
+| [BackEnd](https://github.com/LGCNS-HackerTon/BackEnd) | BE 3명, DB | 백엔드 코드, `db/` (DDL, seed), `CLAUDE.md`, `docs/` |
+| [FrontEnd](https://github.com/LGCNS-HackerTon/FrontEnd) | FE 4명 | 프론트 코드, `CLAUDE.md`, `docs/` |
 
-- `AGENTS.md`, `CLAUDE.md`, `docs/`는 **두 저장소에 똑같이** 들어간다 (AI가 저장소 맨 위에서 읽으니까)
+- **명세 문서와 에이전트 참고 파일은 전부 `docs/`에 둔다.** 맨 위에는 `README.md`와 `CLAUDE.md`(한 줄: `@docs/AGENTS.md`)만 둔다
+- `CLAUDE.md`, `docs/`는 **두 저장소에 똑같이** 들어간다
 - **원본은 BackEnd 저장소.** 문서를 고치면 팀장이 FrontEnd에도 똑같이 반영한다. FrontEnd에서 문서를 직접 고치지 않는다
