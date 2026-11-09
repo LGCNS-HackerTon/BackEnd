@@ -83,11 +83,11 @@
 | SC-04 | 중요 항목 강조 | 잔금 직전 등기부 재확인(9번), 당일 전입신고(11번)는 빨간 강조 | P0 | 실제 | 〃 `important` |
 | SC-05 | 외부 서비스 연결 | 항목별 링크(인터넷등기소, 정부24, 실거래가, 안심전세)를 새 탭으로 연다 | P0 | 실제 | 〃 `link` |
 
-### 4.4 계정·진단 기록 (AC) · 담당 FE 이상혁 (선택 기능, decision-log D3-2)
+### 4.4 계정·진단 기록 (AC) · 담당 BE3 문한일(회원가입·로그인·JWT·내 정보) · BE1 송석주(진단 저장·기록·재평가) · FE 이상혁 (선택 기능, decision-log D3-2)
 
 | ID | 요구사항 | 상세 내용·완료 기준 | 순위 | 구분 | API |
 | --- | --- | --- | --- | --- | --- |
-| AC-01 | 회원가입·로그인 | 이름·이메일·비밀번호(8자 이상, 72바이트 이하)로 가입하고 **JWT Bearer 인증**을 사용한다. 이메일은 소문자로 정규화, 중복 가입은 409. 비밀번호는 BCrypt 해시로만 저장 | P1 | 실제 | `POST /api/members`, `POST /api/members/login` |
+| AC-01 | 회원가입·로그인 | 이름(1~30자)·이메일(254자 이하)·비밀번호(8~128자, 72바이트 이하)로 가입하고 **JWT Bearer 인증**을 사용한다. 이메일은 소문자로 정규화, 중복 가입은 409. 비밀번호는 BCrypt 해시로만 저장 | P1 | 실제 | `POST /api/auth/signup`, `POST /api/auth/login` |
 | AC-02 | 비로그인 사용 | 로그인하지 않아도 진단·결과·일정표·OCR을 **전부** 쓸 수 있다. 질문·일정표·OCR API는 토큰을 보지 않는다 | P0 | 실제 | - |
 | AC-03 | 진단 기록 저장 | 로그인 상태의 진단만 회원별 서버 DB에 저장한다(`Authorization: Bearer` 있음). **비로그인 진단은 저장하지 않는다** | P1 | 실제 예정 | `POST /api/diagnoses` (토큰 선택) |
 | AC-04 | 마이페이지 | 내 이름·이메일과 본인의 **최근 5건**(진단 당시 금액·답 10개 포함)을 `createdAt` 오름차순(최초 진단 순)으로 표시한다 | P1 | 내 정보 실제 · 기록 실제 예정 | `GET /api/members/me`, `GET /api/members/me/diagnoses` |
@@ -145,7 +145,7 @@
 | `GET /api/questions` | DG-02 |
 | `POST /api/diagnoses` | DG-07 ~ DG-11, RS-01 ~ RS-07 |
 | `GET /api/schedule` | SC-01 ~ SC-05 |
-| `POST /api/members`, `POST /api/members/login` | AC-01 (P1) |
+| `POST /api/auth/signup`, `POST /api/auth/login` | AC-01 (P1) |
 | `GET /api/members/me`, `GET /api/members/me/diagnoses` | AC-04 (P1) |
 | `PUT /api/members/me/diagnoses/{id}` | AC-05 (P1) |
 

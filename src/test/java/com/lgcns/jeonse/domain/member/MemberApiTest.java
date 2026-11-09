@@ -39,12 +39,12 @@ class MemberApiTest {
     private static String uniqueEmail() { return "user-" + UUID.randomUUID() + "@example.com"; }
 
     private ResultActions signup(String name, String email, String password) throws Exception {
-        return mvc.perform(post("/api/members").contentType(MediaType.APPLICATION_JSON)
+        return mvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"" + name + "\",\"email\":\"" + email + "\",\"password\":\"" + password + "\"}"));
     }
 
     private ResultActions login(String email, String password) throws Exception {
-        return mvc.perform(post("/api/members/login").contentType(MediaType.APPLICATION_JSON)
+        return mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"email\":\"" + email + "\",\"password\":\"" + password + "\"}"));
     }
 
@@ -87,7 +87,7 @@ class MemberApiTest {
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error.field").value("password"));
         signup("김전세", uniqueEmail(), "a".repeat(73))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error.field").value("password"));
-        mvc.perform(post("/api/members").contentType(MediaType.APPLICATION_JSON).content("{broken"))
+        mvc.perform(post("/api/auth/signup").contentType(MediaType.APPLICATION_JSON).content("{broken"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("INVALID_INPUT"))
                 .andExpect(jsonPath("$.error.field").value(nullValue()));

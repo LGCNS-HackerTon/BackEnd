@@ -40,9 +40,9 @@ PR마다 CI가 `./gradlew build`(테스트 포함)를 실행합니다. CI는 MyS
 | 2 | POST | `/api/diagnoses` | 규칙 기반 점수·등급 + 위험 항목 안내 | P0 | 송석주, 최다인 | `domain.diagnosis`, `domain.diagnosis.advice` |
 | 4 | GET | `/api/schedule` | 계약 일정표 16개 | P0 | 문한일 | `domain.schedule` |
 | 5 | POST | `/api/ocr/registry` | 주소 + 서류로 질문별 확인 여부·답 (multipart) | P1 | 최다인 | `domain.ocr` |
-| 6 | POST | `/api/members` | 회원가입 (JWT 발급) | P1 | 이상혁 | `domain.member` |
-| 7 | POST | `/api/members/login` | 로그인 (JWT 발급) | P1 | 이상혁 | `domain.member` |
-| 8 | GET | `/api/members/me` | 내 정보 (토큰 필수) | P1 | 이상혁 | `domain.member` |
+| 6 | POST | `/api/auth/signup` | 회원가입 (JWT 발급) | P1 | 문한일 | `domain.member` |
+| 7 | POST | `/api/auth/login` | 로그인 (JWT 발급) | P1 | 문한일 | `domain.member` |
+| 8 | GET | `/api/members/me` | 내 정보 (토큰 필수) | P1 | 문한일 | `domain.member` |
 
 9·10번(내 진단 기록, 재평가)과 2번의 로그인 회원 저장은 docs/03 6장 계약만 확정했고 진단 구현과 함께 붙입니다. 로그인 회원 id가 필요한 API는 파라미터에 `@LoginMember Long memberId`(`global.security`)를 붙이고, 토큰이 선택이면 `@LoginMember(required = false)`를 씁니다.
 

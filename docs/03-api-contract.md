@@ -14,7 +14,7 @@
 | 호출 주소 | `http://localhost:8080/api/...` (FE는 `VITE_API_BASE_URL`로 지정) |
 | 형식 | JSON, UTF-8. **OCR(5번)만 요청이 `multipart/form-data`** |
 | 인증 | 질문·진단·일정표·OCR은 인증 없이 호출한다. 회원 API는 **JWT Bearer 인증**을 사용한다 (6장). 진단(2번)은 로그인 회원이 토큰을 보내면 기록을 저장한다 |
-| 담당 | 공통 규칙·에러 형식·CORS 문한일(BE3) · 진단 송석주(BE1), 결과 문구 최다인(BE2) · 질문·일정표 문한일(BE3) · OCR 최다인(BE2) |
+| 담당 | 공통 규칙·에러 형식·CORS 문한일(BE3) · 진단 송석주(BE1), 결과 문구 최다인(BE2) · 질문·일정표 문한일(BE3) · OCR 최다인(BE2) · 회원가입·로그인·JWT·내 정보 문한일(BE3) · 로그인 회원 진단 저장·내 진단 기록·재평가 송석주(BE1) |
 | 요구사항 | docs/08-requirements.md의 ID(DG, RS, SC)를 API마다 표기 |
 
 ## 2. 공통 규칙
@@ -60,11 +60,11 @@
 | 3 | ~~진단~~ | ~~진단 결과 다시 보기~~ | - | ~~`/api/diagnoses/{id}`~~ | **삭제 (D11)** | - | - |
 | 4 | 일정표 | 계약 일정표 | GET | `/api/schedule` | P0 | 문한일 | SC-01~05 |
 | 5 | 진단 | 등기부 OCR (서류로 답 채우기) | POST | `/api/ocr/registry` | P1 | 최다인 | DG-13~15 |
-| 6 | 회원 | 회원가입 | POST | `/api/members` | P1 | 이상혁 | AC-01 |
-| 7 | 회원 | 로그인 | POST | `/api/members/login` | P1 | 이상혁 | AC-01 |
-| 8 | 회원 | 내 정보 | GET | `/api/members/me` | P1 | 이상혁 | AC-04 |
-| 9 | 회원 | 내 진단 기록 (최근 5건) | GET | `/api/members/me/diagnoses` | P1 | 이상혁 | AC-03, AC-04 |
-| 10 | 회원 | 진단 기록 재평가 (덮어쓰기) | PUT | `/api/members/me/diagnoses/{id}` | P1 | 이상혁 | AC-05 |
+| 6 | 회원 | 회원가입 | POST | `/api/auth/signup` | P1 | 문한일 | AC-01 |
+| 7 | 회원 | 로그인 | POST | `/api/auth/login` | P1 | 문한일 | AC-01 |
+| 8 | 회원 | 내 정보 | GET | `/api/members/me` | P1 | 문한일 | AC-04 |
+| 9 | 회원 | 내 진단 기록 (최근 5건) | GET | `/api/members/me/diagnoses` | P1 | 송석주 | AC-03, AC-04 |
+| 10 | 회원 | 진단 기록 재평가 (덮어쓰기) | PUT | `/api/members/me/diagnoses/{id}` | P1 | 송석주 | AC-05 |
 
 ## 4. API 상세
 
@@ -461,13 +461,13 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 
 #### 6. [회원] 회원가입
 
-`POST /api/members` · 인증 없음 · P1 · AC-01
+`POST /api/auth/signup` · 인증 없음 · P1 · 담당 문한일 · AC-01
 
 | 필드 | 타입 | 필수 | 규칙 |
 | --- | --- | --- | --- |
 | `name` | string | ✅ | 앞뒤 공백 제거 후 1~30자 |
 | `email` | string | ✅ | 이메일 형식, 254자 이하. 소문자로 정규화 |
-| `password` | string | ✅ | 8자 이상, 72바이트 이하 (영문·숫자 기준 72자. BCrypt 한계) |
+| `password` | string | ✅ | 8~128자. 그리고 UTF-8 **72바이트 이하** (BCrypt 한계. 영문·숫자는 72자, 한글은 24자까지) |
 
 ```json
 { "name": "김전세", "email": "jeonse@example.com", "password": "password123" }
@@ -496,7 +496,7 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 
 #### 7. [회원] 로그인
 
-`POST /api/members/login` · 인증 없음 · P1 · AC-01
+`POST /api/auth/login` · 인증 없음 · P1 · 담당 문한일 · AC-01
 
 | 필드 | 타입 | 필수 | 규칙 |
 | --- | --- | --- | --- |
@@ -516,7 +516,7 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 
 #### 8. [회원] 내 정보
 
-`GET /api/members/me` · **토큰 필수** · P1 · AC-04 (마이페이지 프로필)
+`GET /api/members/me` · **토큰 필수** · P1 · 담당 문한일 · AC-04 (마이페이지 프로필)
 
 **Response — HTTP 200**
 
@@ -530,7 +530,7 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 
 #### 9. [회원] 내 진단 기록 (최근 5건)
 
-`GET /api/members/me/diagnoses` · **토큰 필수** · P1 · AC-03, AC-04
+`GET /api/members/me/diagnoses` · **토큰 필수** · P1 · 담당 송석주 · AC-03, AC-04
 
 | 항목 | 내용 |
 | --- | --- |
@@ -597,7 +597,7 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 
 #### 10. [회원] 진단 기록 재평가 (덮어쓰기)
 
-`PUT /api/members/me/diagnoses/{id}` · **토큰 필수** · P1 · AC-05
+`PUT /api/members/me/diagnoses/{id}` · **토큰 필수** · P1 · 담당 송석주 · AC-05
 
 | 항목 | 내용 |
 | --- | --- |
@@ -638,3 +638,4 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 | v1.1 | 11/9 | 강사님 피드백 반영 (D6): 5번 등기부 OCR API 추가 (안지산 #11 흐름: 주소+서류, 질문별 CONFIRMED/UNCONFIRMED), 에러 `OCR_UNREADABLE` 추가. 1~4번은 변경 없음 | 이상혁 |
 | v1.2 | 11/9 | D11: 3번 `GET /api/diagnoses/{id}` 삭제, 5번 건축물대장 필수 + `housingType` 추가, 일정표 할 일 16개 | 이상혁 |
 | v1.3 | 11/10 | D10 회원 API 확정: 6~10번(회원가입·로그인·내 정보·내 진단 기록·재평가) 추가, 에러 `UNAUTHORIZED`·`DUPLICATE_EMAIL` 추가, 2번 진단은 토큰이 있을 때만 저장하고 비회원은 `id: null`. 2번 요청·응답 필드 이름은 그대로 | 이상혁 |
+| v1.3 | 11/10 | 최다인 #21 안 반영: 경로 `/api/auth/signup`·`/api/auth/login`, 가입 필드 제한, 담당(회원가입·로그인·JWT·내 정보 문한일 / 진단 저장·기록·재평가 송석주). 기록 개수·정렬은 #21(10건·최신순)이 아니라 현재 FE(5건·오름차순, D10) 기준. 재평가(10번)는 FE에 기능(D8)이 있어 포함 | 이상혁 |
