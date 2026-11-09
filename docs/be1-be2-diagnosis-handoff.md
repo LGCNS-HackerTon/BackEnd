@@ -16,7 +16,7 @@ BE1과 BE2는 진단 API에 두 로직을 연결하기 전에 내부 전달 형�
 | `mortgageMax` | `int` | 계산에 반영된 채권최고액 `3600`(만원) |
 | `seniorDepositMissing` | `boolean` | `false`. B 케이스는 선순위 보증금에 `0`을 직접 입력 |
 
-위 필드명과 타입은 백엔드 내부 전달에 사용한다. `grade`는 BE1이 계산하며, enum은 `com.lgcns.jeonse.diagnosis.RiskGrade`에 둔다. 값은 `SAFE`, `CAUTION`, `DANGER`이며, BE2의 `diagnosis.advice` 패키지는 이 enum을 import해서 사용한다. 최종 API 응답은 기존 명세대로 `"grade": "DANGER"`처럼 JSON 문자열로 보낸다.
+위 필드명과 타입은 백엔드 내부 전달에 사용한다. `grade`는 BE1이 계산하며, enum은 `com.lgcns.jeonse.domain.diagnosis.entity.RiskGrade`에 둔다. 값은 `SAFE`, `CAUTION`, `DANGER`이며, BE2의 `domain.diagnosis.advice` 패키지는 이 enum을 import해서 사용한다. 최종 API 응답은 기존 명세대로 `"grade": "DANGER"`처럼 JSON 문자열로 보낸다.
 
 BE2는 `AdviceResult`에 `factors`, `commonAdvice`, `aiExplanation`, `warnings`와 세 문자열 필드 `gradeLabel`, `gradeMessage`, `disclaimer`를 채워 돌려준다. BE1은 이 세 문구를 최종 응답에 그대로 복사한다. `disclaimer`는 등급과 관계없이 항상 포함한다. 템플릿으로 설명을 제공할 때 최종 응답의 `aiUsed`는 `false`다.
 
