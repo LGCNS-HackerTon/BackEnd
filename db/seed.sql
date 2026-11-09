@@ -1,5 +1,5 @@
 -- jeonse DB 기본 데이터 (MySQL 8.0.16 이상 기준, MariaDB 10.5 이상에서도 실행됨)
--- 원본: docs/01-registry-questions.md (질문 10개), docs/02-schedule-rules.md (할 일 14개)
+-- 원본: docs/01-registry-questions.md (질문 10개), docs/02-schedule-rules.md (할 일 16개)
 -- schema.sql 다음에 실행한다. 여러 번 실행해도 같은 행을 덮어써서 중복되지 않는다.
 -- ON DUPLICATE KEY UPDATE에서 VALUES(컬럼)을 쓰는 이유: MySQL 8 전용 문법(AS new)은 MariaDB에서 실행되지 않는다.
 -- MySQL 8.0.20 이상은 VALUES()에 '앞으로 없어질 문법' 경고만 띄우고 정상 실행한다.
@@ -119,13 +119,13 @@ ON DUPLICATE KEY UPDATE
     special_clause = VALUES(special_clause);
 
 -- ============================================================
--- 2. 계약 일정표 할 일 14개 (docs/02)
+-- 2. 계약 일정표 할 일 16개 (docs/02)
 --    날짜 = anchor 날짜 + offset_days. important는 9번·11번
 --    링크는 한 줄에 하나, 여러 개면 첫 번째. 링크 표에 없는 서비스(은행)는 NULL
 -- ============================================================
 -- 질문과 같은 이유로 기존 순서를 잠시 비켜 둔다 (id(PK)와 uk_checklist_order가 다른 행에서 겹치는 경우)
-SET @checklist_shift = (SELECT GREATEST(COALESCE(MAX(sort_order), 0), 14) FROM checklist_items);
-UPDATE checklist_items SET sort_order = CASE WHEN sort_order + @checklist_shift <= 2147483647 THEN sort_order + @checklist_shift ELSE 0 END WHERE sort_order <= 14;
+SET @checklist_shift = (SELECT GREATEST(COALESCE(MAX(sort_order), 0), 16) FROM checklist_items);
+UPDATE checklist_items SET sort_order = CASE WHEN sort_order + @checklist_shift <= 2147483647 THEN sort_order + @checklist_shift ELSE 0 END WHERE sort_order <= 16;
 
 INSERT INTO checklist_items
     (id, sort_order, anchor, offset_days, title, reason, important, link_name, link_url)
@@ -151,9 +151,9 @@ VALUES
      '잔금일 기습 대출 같은 일을 막으려고',
      FALSE, NULL, NULL),
     (6,  6,  'CONTRACT', 0,
-     '계약금은 등기부상 소유자 명의 계좌로만 송금',
-     '엉뚱한 사람에게 돈이 가는 걸 막으려고',
-     FALSE, NULL, NULL),
+     '계약금 송금 직전에 등기부를 다시 열어 새 권리가 없는지 보고, 계약서의 수령인과 같은 등기부상 소유자 명의 계좌로만 송금',
+     '엉뚱한 사람에게 돈이 가는 것과 계약 당일 기습 대출을 막으려고',
+     FALSE, '인터넷등기소', 'https://www.iros.go.kr'),
     (7,  7,  'CONTRACT', 1,
      '계약서로 확정일자 미리 받기',
      '확정일자는 계약서만 있으면 바로 받을 수 있어요. 일찍 받을수록 유리해요.',
@@ -185,6 +185,14 @@ VALUES
     (14, 14, 'EXPIRY', -60,
      '만기 2개월 전: 나갈 거면 집주인에게 알리기',
      '세입자는 만기 2개월 전까지 알려야 해요',
+     FALSE, NULL, NULL),
+    (15, 15, 'CONTRACT', -1,
+     '전세보증금 반환보증 가입 가능 여부 미리 확인',
+     '계약 후에 가입이 거절되면 보증금을 지킬 방법이 줄어들어요. 거절될 수 있으면 특약("가입 거절 시 계약 무효")을 넣으세요.',
+     FALSE, '안심전세 앱(HUG)', 'https://www.khug.or.kr'),
+    (16, 16, 'CONTRACT', -1,
+     '집주인에게 국세·지방세 납세증명서 요청',
+     '체납 세금은 내 보증금보다 먼저 가져가요',
      FALSE, NULL, NULL)
 ON DUPLICATE KEY UPDATE
     sort_order  = VALUES(sort_order),

@@ -1,6 +1,7 @@
 package com.lgcns.jeonse.global.exception;
 
 import com.lgcns.jeonse.global.apiPayload.ApiError;
+import java.time.LocalDate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -25,7 +26,8 @@ public class ExceptionAdvice {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiError> invalidParameter(MethodArgumentTypeMismatchException exception) {
         return ResponseEntity.badRequest().body(new ApiError(new ApiError.ErrorDetail(
-                "INVALID_INPUT", "날짜는 YYYY-MM-DD 형식으로 입력해 주세요.", exception.getName())));
+                "INVALID_INPUT", exception.getRequiredType() == LocalDate.class
+                        ? "날짜는 YYYY-MM-DD 형식으로 입력해 주세요." : "숫자로 입력해 주세요.", exception.getName())));
     }
 
     @ExceptionHandler(Exception.class)
