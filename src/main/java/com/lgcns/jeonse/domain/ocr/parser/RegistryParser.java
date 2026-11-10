@@ -85,7 +85,8 @@ public final class RegistryParser {
             ledgerMismatch = true;
             warnings.add("건축물대장의 주소·호수가 입력한 주소와 달라요. 용도·위반건축물 질문은 직접 답해 주세요.");
         } else if (!Boolean.TRUE.equals(ledgerBaseMatch)
-                || (input.ho != null && ledgerHos.size() != 1)) {
+                || (input.ho != null && ledgerHos.size() != 1)
+                || (input.ho == null && compact(ledgerText).contains("집합건축물대장"))) {
             ledgerUnverified = true;
             warnings.add("건축물대장의 주소·호수를 확인하지 못했어요. 용도·위반건축물 질문은 직접 답해 주세요.");
         } else {

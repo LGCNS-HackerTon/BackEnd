@@ -82,6 +82,7 @@ public class RegistryParserTest {
 
     @Test
     void 말소_기록이_없으면_가압류는_유효하다() {
+        // Windows의 CRLF 픽스처에서도 말소 행이 제거되어 전체 테스트가 통과해야 한다.
         String text = fixture("registry-case-a-cancelled.txt")
                 .replaceAll("(?m)^4 3번가압류등기말소[^\\r\\n]*(?:\\r?\\n)?", "");
         OcrResponseDTO r = RegistryParser.parse("서울 가상구 샘플로 7, 103동 702호", text, fixture("ledger-case-a.txt"), TODAY);
@@ -219,6 +220,17 @@ public class RegistryParserTest {
         String ledger = "집합건축물대장(전유부, 갑)\n주용도 아파트\n위반건축물";
         OcrResponseDTO r = RegistryParser.parse("서울 가상구 테스트로 12, 101동 1204호",
                 fixture("registry-case-b.txt"), ledger, TODAY);
+
+        assertAnswer(r, "T2_USAGE", Status.UNCONFIRMED, null);
+        assertAnswer(r, "R1_VIOLATION", Status.UNCONFIRMED, null);
+        assertThat(r.housingType()).isNull();
+        assertThat(r.warnings()).contains("건축물대장의 주소·호수를 확인하지 못했어요. 용도·위반건축물 질문은 직접 답해 주세요.");
+    }
+
+    @Test
+    void 입력_호수가_없으면_특정_호실의_대장으로_용도를_확정하지_않는다() {
+        OcrResponseDTO r = RegistryParser.parse("서울 가상구 테스트로 12",
+                fixture("registry-case-b.txt"), fixture("ledger-case-b.txt"), TODAY);
 
         assertAnswer(r, "T2_USAGE", Status.UNCONFIRMED, null);
         assertAnswer(r, "R1_VIOLATION", Status.UNCONFIRMED, null);
