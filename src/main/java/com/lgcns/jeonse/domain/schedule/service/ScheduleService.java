@@ -3,6 +3,8 @@ package com.lgcns.jeonse.domain.schedule.service;
 import com.lgcns.jeonse.domain.schedule.dto.ScheduleResponseDTO;
 import com.lgcns.jeonse.domain.schedule.dto.ScheduleResponseDTO.Link;
 import com.lgcns.jeonse.domain.schedule.dto.ScheduleResponseDTO.ScheduleItem;
+import com.lgcns.jeonse.domain.schedule.entity.ChecklistItem;
+import com.lgcns.jeonse.domain.schedule.init.ChecklistDataInitializer;
 import com.lgcns.jeonse.domain.schedule.repository.ChecklistItemRepository;
 import com.lgcns.jeonse.global.exception.InvalidInputException;
 import java.time.LocalDate;
@@ -11,6 +13,11 @@ import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class ScheduleService {
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
     private static final int DEFAULT_TERM_MONTHS = 24;
+    private static final Logger log = LoggerFactory.getLogger(ScheduleService.class);
+    private static final Set<Integer> EXPECTED_ORDERS = ChecklistDataInitializer.defaults().stream()
+            .map(ChecklistItem::getSortOrder).collect(Collectors.toCollection(TreeSet::new));
     private final ChecklistItemRepository repository;
 
     public ScheduleService(ChecklistItemRepository repository) { this.repository = repository; }
@@ -45,7 +55,9 @@ public class ScheduleService {
         Map<String, LocalDate> anchors = Map.of(
                 "CONTRACT", contractDate, "BALANCE", balanceDate, "MOVE_IN", moveIn, "EXPIRY", expiryDate);
 
-        List<ScheduleItem> items = repository.findAll().stream()
+        List<ChecklistItem> rows = repository.findAll();
+        checkComplete(rows);
+        List<ScheduleItem> items = rows.stream()
                 .map(item -> {
                     LocalDate date = anchors.get(item.getAnchor()).plusDays(item.getOffsetDays());
                     int daysLeft = (int) ChronoUnit.DAYS.between(today, date);
@@ -57,5 +69,15 @@ public class ScheduleService {
                 .sorted(Comparator.comparing(ScheduleItem::date).thenComparingInt(ScheduleItem::order))
                 .toList();
         return new ScheduleResponseDTO(today, expiryDate, items);
+    }
+
+    // 할 일은 순서 1~16이 하나씩 있어야 한다 (docs/02). 다르면 일부만 보여주지 않고 500으로 알린다
+    private static void checkComplete(List<ChecklistItem> rows) {
+        Set<Integer> orders = rows.stream().map(ChecklistItem::getSortOrder).collect(Collectors.toCollection(TreeSet::new));
+        if (rows.size() == EXPECTED_ORDERS.size() && orders.equals(EXPECTED_ORDERS)) return;
+        Set<Integer> missing = new TreeSet<>(EXPECTED_ORDERS);
+        missing.removeAll(orders);
+        log.error("할 일 데이터가 정해진 16개와 달라요. 읽은 개수 {}, 빠진 순서 {}, 읽은 순서 {}", rows.size(), missing, orders);
+        throw new IllegalStateException("할 일 데이터가 정해진 16개와 달라요.");
     }
 }

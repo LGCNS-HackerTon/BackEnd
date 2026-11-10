@@ -8,9 +8,12 @@ import static org.mockito.Mockito.when;
 import com.lgcns.jeonse.domain.schedule.dto.ScheduleResponseDTO;
 import com.lgcns.jeonse.domain.schedule.dto.ScheduleResponseDTO.ScheduleItem;
 import com.lgcns.jeonse.domain.schedule.entity.ChecklistItem;
+import com.lgcns.jeonse.domain.schedule.init.ChecklistDataInitializer;
 import com.lgcns.jeonse.domain.schedule.repository.ChecklistItemRepository;
 import com.lgcns.jeonse.global.exception.InvalidInputException;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -20,12 +23,10 @@ class ScheduleServiceTest {
     private final ScheduleService service = new ScheduleService(repository);
 
     ScheduleServiceTest() {
-        // 저장 순서를 일부러 섞어 정렬을 확인한다
-        when(repository.findAll()).thenReturn(List.of(
-                new ChecklistItem(11, "MOVE_IN", 0, "전입신고", "r", true, "정부24", "https://www.gov.kr"),
-                new ChecklistItem(14, "EXPIRY", -60, "만기 2개월 전", "r", false, null, null),
-                new ChecklistItem(9, "BALANCE", 0, "등기부 재확인", "r", true, "인터넷등기소", "https://www.iros.go.kr"),
-                new ChecklistItem(1, "CONTRACT", -1, "등기부 점검", "r", false, "인터넷등기소", "https://www.iros.go.kr")));
+        // 실제 기본 데이터 16개를 저장 순서를 뒤집어 넣어 정렬을 확인한다
+        List<ChecklistItem> rows = new ArrayList<>(ChecklistDataInitializer.defaults());
+        Collections.reverse(rows);
+        when(repository.findAll()).thenReturn(rows);
     }
 
     private ScheduleResponseDTO schedule(String contract, String balance, String moveIn, Integer term, LocalDate today) {
@@ -56,7 +57,9 @@ class ScheduleServiceTest {
     void 날짜_오름차순_같은_날이면_순서_번호순으로_정렬한다() {
         ScheduleResponseDTO dto = schedule("2026-11-20", "2026-12-20", null, null, TODAY);
 
-        assertThat(dto.items()).extracting(ScheduleItem::order).containsExactly(1, 9, 11, 14);
+        // 11-19: 1,2,3,15,16 / 11-20: 4,5,6 / 11-21: 7 / 12-06: 8 / 12-20: 9,10,11 / 12-21: 12 / 만기 전: 13, 14
+        assertThat(dto.items()).extracting(ScheduleItem::order)
+                .containsExactly(1, 2, 3, 15, 16, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
     }
 
     @Test
@@ -88,7 +91,7 @@ class ScheduleServiceTest {
 
     @Test
     void 같은_날은_허용한다() {
-        assertThat(schedule("2026-11-20", "2026-11-20", "2026-11-20", 1, TODAY).items()).hasSize(4);
+        assertThat(schedule("2026-11-20", "2026-11-20", "2026-11-20", 1, TODAY).items()).hasSize(16);
     }
 
     @Test
@@ -99,6 +102,26 @@ class ScheduleServiceTest {
         assertField(() -> service.getSchedule(d, d.minusDays(1), null, null, TODAY), "balanceDate");
         assertField(() -> service.getSchedule(d, d, d.minusDays(1), null, TODAY), "moveInDate");
         assertField(() -> service.getSchedule(d, d, d, 0, TODAY), "termMonths");
+    }
+
+    @Test
+    void 할_일_데이터가_16개가_아니면_일부만_돌려주지_않는다() {
+        List<ChecklistItem> partial = ChecklistDataInitializer.defaults().stream()
+                .filter(item -> item.getSortOrder() != 9 && item.getSortOrder() != 11).toList();
+        when(repository.findAll()).thenReturn(partial);
+
+        assertThatThrownBy(() -> schedule("2026-11-20", "2026-12-20", null, null, TODAY))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void 개수가_16개여도_순서가_겹치면_일부만_돌려주지_않는다() {
+        List<ChecklistItem> duplicated = new ArrayList<>(ChecklistDataInitializer.defaults().subList(0, 15));
+        duplicated.add(ChecklistDataInitializer.defaults().get(0));
+        when(repository.findAll()).thenReturn(duplicated);
+
+        assertThatThrownBy(() -> schedule("2026-11-20", "2026-12-20", null, null, TODAY))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     private static void assertField(Runnable call, String field) {
