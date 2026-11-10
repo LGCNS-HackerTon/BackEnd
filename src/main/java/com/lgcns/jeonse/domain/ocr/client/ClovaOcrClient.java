@@ -5,9 +5,13 @@ import com.lgcns.jeonse.global.exception.OcrUnreadableException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.client.ResourceAccessException;
 
 import java.time.Duration;
 import java.util.Base64;
@@ -18,6 +22,7 @@ import java.util.UUID;
 /** Naver CLOVA OCR General API (V2, JSON 본문). 서류는 이 요청에만 쓰고 저장하지 않는다. */
 @Component
 public class ClovaOcrClient {
+    private static final Logger log = LoggerFactory.getLogger(ClovaOcrClient.class);
     private final String url;
     private final String secret;
     private final RestClient restClient;
@@ -27,7 +32,7 @@ public class ClovaOcrClient {
                           @Value("${clova.ocr.secret:}") String secret) {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofSeconds(10));
-        factory.setReadTimeout(Duration.ofSeconds(10));
+        factory.setReadTimeout(Duration.ofSeconds(60));
         this.restClient = builder.requestFactory(factory).build();
         this.url = url;
         this.secret = secret;
@@ -36,7 +41,10 @@ public class ClovaOcrClient {
     /** format: jpg · png · pdf */
     public String read(byte[] file, String format) {
         // 서류와 비밀키가 평문으로 나가지 않게 HTTPS 주소만 쓴다
-        if (secret.isBlank() || !url.startsWith("https://")) throw new OcrUnreadableException();
+        if (secret.isBlank() || !url.startsWith("https://")) {
+            log.warn("CLOVA OCR is not configured");
+            throw new OcrUnreadableException();
+        }
         Map<String, Object> body = Map.of(
                 "version", "V2",
                 "requestId", UUID.randomUUID().toString(),
@@ -52,7 +60,15 @@ public class ClovaOcrClient {
                     .retrieve()
                     .body(JsonNode.class);
             return toText(response);
+        } catch (RestClientResponseException e) {
+            log.warn("CLOVA OCR HTTP failure: status={}", e.getStatusCode().value());
+            throw new OcrUnreadableException();
+        } catch (ResourceAccessException e) {
+            log.warn("CLOVA OCR connection failure: cause={}",
+                    e.getMostSpecificCause().getClass().getSimpleName());
+            throw new OcrUnreadableException();
         } catch (RestClientException e) {
+            log.warn("CLOVA OCR client failure: type={}", e.getClass().getSimpleName());
             throw new OcrUnreadableException();
         }
     }
@@ -62,7 +78,12 @@ public class ClovaOcrClient {
         StringBuilder text = new StringBuilder();
         if (response == null) throw new OcrUnreadableException();
         for (JsonNode image : response.path("images")) {
-            if (!"SUCCESS".equals(image.path("inferResult").asText())) throw new OcrUnreadableException();
+            if (!"SUCCESS".equals(image.path("inferResult").asText())) {
+                String result = image.path("inferResult").asText();
+                log.warn("CLOVA OCR rejected image: result={}",
+                        "FAILURE".equals(result) || "ERROR".equals(result) ? result : "UNKNOWN");
+                throw new OcrUnreadableException();
+            }
             for (JsonNode field : image.path("fields")) {
                 text.append(field.path("inferText").asText()).append(field.path("lineBreak").asBoolean() ? '\n' : ' ');
             }

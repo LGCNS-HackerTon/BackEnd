@@ -2,12 +2,19 @@ package com.lgcns.jeonse.domain.ocr.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lgcns.jeonse.global.exception.OcrUnreadableException;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.mock.http.client.MockClientHttpResponse;
 import org.springframework.web.client.RestClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@ExtendWith(OutputCaptureExtension.class)
 class ClovaOcrClientTest {
     final ObjectMapper mapper = new ObjectMapper();
 
@@ -36,6 +43,28 @@ class ClovaOcrClientTest {
                 """;
 
         assertThatThrownBy(() -> ClovaOcrClient.toText(mapper.readTree(json))).isInstanceOf(OcrUnreadableException.class);
+    }
+
+    @Test
+    void CLOVA_실패_메시지와_서류_내용은_로그에_남기지_않는다(CapturedOutput output) throws Exception {
+        String json = """
+                {"images":[{"inferResult":"소유자 홍길동","message":"서류 내용 홍길동","fields":[]}]}
+                """;
+
+        assertThatThrownBy(() -> ClovaOcrClient.toText(mapper.readTree(json)))
+                .isInstanceOf(OcrUnreadableException.class);
+        assertThat(output).contains("result=UNKNOWN").doesNotContain("홍길동", "서류 내용");
+    }
+
+    @Test
+    void HTTP_오류는_상태만_로그에_남긴다(CapturedOutput output) {
+        RestClient.Builder builder = RestClient.builder().requestInterceptor((request, body, execution) ->
+                new MockClientHttpResponse("소유자 홍길동".getBytes(StandardCharsets.UTF_8), HttpStatus.BAD_GATEWAY));
+        ClovaOcrClient client = new ClovaOcrClient(builder, "https://example.com/ocr", "test-secret");
+
+        assertThatThrownBy(() -> client.read(new byte[]{1}, "png"))
+                .isInstanceOf(OcrUnreadableException.class);
+        assertThat(output).contains("status=502").doesNotContain("홍길동", "test-secret");
     }
 
     @Test

@@ -45,3 +45,8 @@ demo:
 
 server:
   port: 8080
+
+logging:
+  level:
+    org.springframework.http.converter: INFO
+    org.springframework.web.client: INFO
