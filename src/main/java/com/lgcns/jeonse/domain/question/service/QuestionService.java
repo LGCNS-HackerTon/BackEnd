@@ -20,7 +20,7 @@ public class QuestionService {
     private static final Logger log = LoggerFactory.getLogger(QuestionService.class);
     private static final Map<String, String> SECTION_NAMES = Map.of(
             "TITLE", "표제부", "GAPGU", "갑구", "EULGU", "을구", "BUILDING", "건축물대장");
-    // 정해진 질문 10개의 코드-순서 (docs/01). 데이터가 이와 다르면 일부만 보여주지 않고 500으로 알린다 (docs/03 1번)
+    // 정해진 질문 10개의 코드-순서 (docs/01)
     private static final Map<String, Integer> EXPECTED = QuestionDataInitializer.defaults().stream()
             .collect(Collectors.toUnmodifiableMap(RegistryQuestion::getCode, RegistryQuestion::getSortOrder));
     private final RegistryQuestionRepository repository;
@@ -37,6 +37,12 @@ public class QuestionService {
         return new QuestionResponseDTO(items);
     }
 
+    /**
+     * 질문이 정해진 10개(docs/01)와 코드·순서까지 똑같은지 확인한다.
+     * 다르면 빠진 코드를 로그에 남기고 예외를 던져, 일부만 보여주지 않고 500 {@code INTERNAL_ERROR}로 알린다 (docs/03 1번).
+     *
+     * @throws IllegalStateException 질문 데이터가 정해진 10개와 다를 때
+     */
     private static void checkComplete(List<RegistryQuestion> questions) {
         Map<String, Integer> actual = questions.stream().collect(Collectors.toMap(
                 RegistryQuestion::getCode, RegistryQuestion::getSortOrder, (a, b) -> a));

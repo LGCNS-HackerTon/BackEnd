@@ -23,7 +23,11 @@ class QuestionServiceTest {
 
         QuestionResponseDTO dto = service.getQuestions();
 
-        assertThat(dto.questions()).hasSize(10);
+        assertThat(dto.questions()).extracting(QuestionResponseDTO.QuestionItem::code).containsExactly(
+                "T1_ADDRESS", "T2_USAGE", "A1_OWNER", "A2_RECENT_OWNER", "A3_TRUST",
+                "A4_SEIZURE", "B1_MORTGAGE", "B2_LEASE_REG", "B3_JEONSE_RIGHT", "R1_VIOLATION");
+        assertThat(dto.questions()).extracting(QuestionResponseDTO.QuestionItem::order)
+                .containsExactly(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         assertThat(dto.questions().get(0).sectionName()).isEqualTo("표제부");
         assertThat(dto.questions().get(6).needsAmount()).isTrue();
     }

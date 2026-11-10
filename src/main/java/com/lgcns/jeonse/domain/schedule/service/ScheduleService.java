@@ -38,6 +38,12 @@ public class ScheduleService {
         return getSchedule(contractDate, balanceDate, moveInDate, termMonths, LocalDate.now(KST));
     }
 
+    /**
+     * 기준일과 할 일 16개로 일정표를 계산한다 (docs/03 4번). 테스트에서 오늘 날짜를 고정하려고 {@code today}를 받는다.
+     *
+     * @throws InvalidInputException 날짜가 없거나 순서가 거꾸로이거나 계약 기간이 1개월 미만일 때 (400)
+     * @throws IllegalStateException 할 일 데이터가 정해진 16개와 다를 때 (500)
+     */
     ScheduleResponseDTO getSchedule(LocalDate contractDate, LocalDate balanceDate, LocalDate moveInDate,
                                     Integer termMonths, LocalDate today) {
         if (contractDate == null) throw new InvalidInputException("계약일을 입력해 주세요.", "contractDate");
@@ -71,7 +77,12 @@ public class ScheduleService {
         return new ScheduleResponseDTO(today, expiryDate, items);
     }
 
-    // 할 일은 순서 1~16이 하나씩 있어야 한다 (docs/02). 다르면 일부만 보여주지 않고 500으로 알린다
+    /**
+     * 할 일이 순서 1~16으로 하나씩 있는지 확인한다 (docs/02).
+     * 다르면 빠진 순서를 로그에 남기고 예외를 던져, 일부만 보여주지 않고 500 {@code INTERNAL_ERROR}로 알린다 (docs/03 2장).
+     *
+     * @throws IllegalStateException 할 일 데이터가 정해진 16개와 다를 때
+     */
     private static void checkComplete(List<ChecklistItem> rows) {
         Set<Integer> orders = rows.stream().map(ChecklistItem::getSortOrder).collect(Collectors.toCollection(TreeSet::new));
         if (rows.size() == EXPECTED_ORDERS.size() && orders.equals(EXPECTED_ORDERS)) return;
