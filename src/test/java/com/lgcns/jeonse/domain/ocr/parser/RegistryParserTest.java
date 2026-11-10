@@ -192,6 +192,18 @@ public class RegistryParserTest {
     }
 
     @Test
+    void 변동사항에_입력_호수가_있어도_호명칭이_다르면_쓰지_않는다() {
+        String ledger = fixture("ledger-case-b.txt").replace("호명칭 1204호", "호명칭 1301호")
+                + "\n변동사항 이전 1204호 관련 기록";
+        OcrResponseDTO r = RegistryParser.parse("서울 가상구 테스트로 12, 101동 1204호",
+                fixture("registry-case-b.txt"), ledger, TODAY);
+
+        assertAnswer(r, "T2_USAGE", Status.UNCONFIRMED, null);
+        assertAnswer(r, "R1_VIOLATION", Status.UNCONFIRMED, null);
+        assertThat(r.housingType()).isNull();
+    }
+
+    @Test
     void 건축물대장_도로명주소가_다르면_쓰지_않는다() {
         String ledger = fixture("ledger-case-b.txt").replace("테스트로 12", "다른로 99");
         OcrResponseDTO r = RegistryParser.parse("서울 가상구 테스트로 12, 101동 1204호", fixture("registry-case-b.txt"), ledger, TODAY);
@@ -244,6 +256,19 @@ public class RegistryParserTest {
         assertAnswer(r, "T2_USAGE", Status.CONFIRMED, "NO");
         assertAnswer(r, "R1_VIOLATION", Status.CONFIRMED, "YES");
         assertThat(r.housingType()).isEqualTo(HousingType.NON_RESIDENTIAL);
+    }
+
+    @Test
+    void 집합건축물대장_전유부분이_빠지면_변동사항의_용도를_쓰지_않는다() {
+        String ledger = "집합건축물대장(전유부, 갑)\n호명칭 1204호\n"
+                + "대지위치 서울 가상구 테스트동 지번 123\n"
+                + "변동사항 과거 용도 아파트";
+        String registry = fixture("registry-case-b.txt").replace("제2종근린생활시설", "용도 판독불가");
+        OcrResponseDTO r = RegistryParser.parse("서울 가상구 테스트동 123 가나빌라 101동 1204호",
+                registry, ledger, TODAY);
+
+        assertAnswer(r, "T2_USAGE", Status.UNCONFIRMED, null);
+        assertThat(r.housingType()).isNull();
     }
 
     @Test
