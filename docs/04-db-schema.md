@@ -88,6 +88,7 @@ CREATE TABLE diagnoses (
     created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     -- 재평가(덮어쓰기, D10) 시각. UPDATE에서 updated_at을 생략하고 같은 행의 다른 컬럼 값이 바뀌면 DB가 자동 갱신한다
     updated_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    reevaluated_at  DATETIME     NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     -- 마이페이지 "내 진단 최근 5건, created_at 오름차순" 조회용 (D10). user_id FK 인덱스도 겸한다
     KEY idx_diag_user_created (user_id, created_at),
@@ -125,6 +126,8 @@ CREATE TABLE diagnosis_answers (
 - **제약 위반**: CHECK·UNIQUE·FK 위반은 그대로 두면 500이 된다. 저장 전에 입력을 검증하고 400 `INVALID_INPUT`으로 돌려준다
 - **등급 경계**: `ck_diag_grade`는 docs/01 3절 경계(29/59)를 그대로 쓴다. docs/01 점수·등급 경계를 바꾸면 **BE 상수와 `db/schema.sql`의 이 제약을 같은 PR에서 함께 바꾼다**. 하나만 바꾸면 경계 점수의 진단 저장이 실패한다
 - **`created_at`·`updated_at` Hibernate 매핑**: `UPDATE`에서 `updated_at`을 생략하고 같은 행의 다른 컬럼 값이 실제로 바뀌면 DB가 수정 시각을 자동 갱신한다. 값이 그대로이거나 답변 테이블만 바뀌면 진단 행의 시각도 그대로다. Hibernate의 기본 정적 UPDATE는 갱신 가능한 컬럼에 기존 값을 포함할 수 있으므로 시각 관리 주체를 정한다. Hibernate에서 관리하려면 `@CreationTimestamp`·`@UpdateTimestamp`를 쓰고, DB에 맡기려면 두 필드에 `@Column(insertable = false, updatable = false)`를 사용한다. 현재 엔티티에서 DB가 생성한 값이 즉시 필요하면 다시 조회하거나 생성값 매핑을 사용한다.
+
+- **`reevaluated_at`**은 앱이 재평가할 때만 기록한다. 기존 MySQL DB를 유지하려면 `ALTER TABLE diagnoses ADD COLUMN reevaluated_at DATETIME NULL;`을 적용한다. 기존 행은 두 시각이 다른 경우 이전 `updated_at`을 사용한다. 같은 초의 과거 재평가는 기존 값으로 구분할 수 없다.
 
 ## 저장하지 않는 데이터
 

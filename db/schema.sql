@@ -82,6 +82,7 @@ CREATE TABLE diagnoses (
     created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     -- 재평가(덮어쓰기, D10) 시각. UPDATE에서 updated_at을 생략하고 같은 행의 다른 컬럼 값이 바뀌면 DB가 자동 갱신한다
     updated_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    reevaluated_at  DATETIME     NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     -- 마이페이지 "내 진단 최근 5건, created_at 오름차순" 조회용 (D10). user_id FK 인덱스도 겸한다
     KEY idx_diag_user_created (user_id, created_at),

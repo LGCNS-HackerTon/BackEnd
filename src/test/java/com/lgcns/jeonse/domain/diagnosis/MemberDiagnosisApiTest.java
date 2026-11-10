@@ -3,6 +3,8 @@ package com.lgcns.jeonse.domain.diagnosis;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.mockStatic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -12,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.jayway.jsonpath.JsonPath;
 import com.lgcns.jeonse.domain.diagnosis.repository.DiagnosisAnswerRepository;
 import com.lgcns.jeonse.domain.diagnosis.repository.DiagnosisRepository;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -123,29 +126,31 @@ class MemberDiagnosisApiTest {
     }
 
     @Test
-    void 재평가하면_같은_행을_덮어쓴다() throws Exception {
+    void 같은_초에_재평가해도_기존_행에_재평가_시각을_남긴다() throws Exception {
         String token = newMemberToken();
         long id = idOf(diagnose(token, body(24000, "0", CASE_B_ANSWERS)));
         String createdAt = JsonPath.read(history(token).andReturn().getResponse().getContentAsString(),
                 "$.diagnoses[0].createdAt");
         long diagnosisCount = diagnoses.count(), answerCount = answers.count();
-        Thread.sleep(1100); // 시각은 초 단위라 재평가 시각이 달라지게 기다린다
-
-        mvc.perform(json(put("/api/members/me/diagnoses/" + id), token, body(10000, "null", SAFE_ANSWERS)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(id))
-                .andExpect(jsonPath("$.score").value(0))
-                .andExpect(jsonPath("$.grade").value("SAFE"))
-                .andExpect(jsonPath("$.createdAt").value(createdAt))
-                .andExpect(jsonPath("$.warnings.length()").value(1))
-                .andExpect(jsonPath("$.disclaimer").value(notNullValue()));
+        LocalDateTime originalTime = LocalDateTime.parse(createdAt);
+        try (var clock = mockStatic(LocalDateTime.class, CALLS_REAL_METHODS)) {
+            clock.when(LocalDateTime::now).thenReturn(originalTime);
+            mvc.perform(json(put("/api/members/me/diagnoses/" + id), token, body(10000, "null", SAFE_ANSWERS)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(id))
+                    .andExpect(jsonPath("$.score").value(0))
+                    .andExpect(jsonPath("$.grade").value("SAFE"))
+                    .andExpect(jsonPath("$.createdAt").value(createdAt))
+                    .andExpect(jsonPath("$.warnings.length()").value(1))
+                    .andExpect(jsonPath("$.disclaimer").value(notNullValue()));
+        }
 
         assertThat(diagnoses.count()).isEqualTo(diagnosisCount);
         assertThat(answers.count()).isEqualTo(answerCount);
         history(token)
                 .andExpect(jsonPath("$.diagnoses.length()").value(1))
                 .andExpect(jsonPath("$.diagnoses[0].createdAt").value(createdAt))
-                .andExpect(jsonPath("$.diagnoses[0].updatedAt").value(notNullValue()))
+                .andExpect(jsonPath("$.diagnoses[0].updatedAt").value(createdAt))
                 .andExpect(jsonPath("$.diagnoses[0].location").value("보증금 1억 원 · 시세 2억 8,000만 원"))
                 .andExpect(jsonPath("$.diagnoses[0].score").value(0))
                 .andExpect(jsonPath("$.diagnoses[0].gradeLabel").value("안전"))
