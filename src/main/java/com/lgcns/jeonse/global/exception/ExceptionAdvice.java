@@ -2,8 +2,11 @@ package com.lgcns.jeonse.global.exception;
 
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.lgcns.jeonse.global.apiPayload.ApiError;
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import org.apache.tomcat.util.http.fileupload.impl.FileSizeLimitExceededException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -17,6 +20,8 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class ExceptionAdvice {
+    private static final Logger log = LoggerFactory.getLogger(ExceptionAdvice.class);
+
     @ExceptionHandler(InvalidInputException.class)
     public ResponseEntity<ApiError> invalidInput(InvalidInputException exception) {
         return ResponseEntity.badRequest().body(new ApiError(
@@ -74,8 +79,14 @@ public class ExceptionAdvice {
                 "NOT_FOUND", "요청한 주소를 찾을 수 없어요. 주소를 다시 확인해 주세요.", null)));
     }
 
+    /**
+     * 위에서 처리하지 못한 예외는 500 {@code INTERNAL_ERROR}로 응답한다 (docs/03 2장).
+     * 응답에는 내부 메시지를 넣지 않고, 원인을 찾을 수 있게 요청(메서드·경로)과 예외(stack trace 포함)를 ERROR 로그로 남긴다.
+     * 쿼리 문자열과 요청 본문은 개인정보가 들어갈 수 있어 로그에 남기지 않는다.
+     */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> internalError(Exception exception) {
+    public ResponseEntity<ApiError> internalError(Exception exception, HttpServletRequest request) {
+        log.error("처리하지 못한 서버 오류: {} {}", request.getMethod(), request.getRequestURI(), exception);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiError(
                 new ApiError.ErrorDetail("INTERNAL_ERROR", "서버 오류가 발생했어요. 잠시 후 다시 시도해 주세요.", null)));
     }
