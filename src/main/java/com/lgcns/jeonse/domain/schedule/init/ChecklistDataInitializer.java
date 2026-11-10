@@ -2,6 +2,7 @@ package com.lgcns.jeonse.domain.schedule.init;
 
 import com.lgcns.jeonse.domain.schedule.entity.ChecklistItem;
 import com.lgcns.jeonse.domain.schedule.repository.ChecklistItemRepository;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -27,18 +28,29 @@ public class ChecklistDataInitializer {
 
     /**
      * 기본 할 일 중 테이블에 없는 순서 번호만 추가한다. 이미 있는 행은 지우거나 덮어쓰지 않는다.
+     * db/seed.sql과 같이 id = 순서 번호로 넣어, 나중에 seed를 다시 실행해도 같은 행을 덮어쓰고 행이 늘지 않게 한다.
+     * 그 id를 다른 행이 쓰고 있으면 추가하지 않고 경고만 남긴다 (일정표 API가 500으로 알린다).
      *
      * @return 추가한 할 일 수
      */
     public static int fillMissing(ChecklistItemRepository repository) {
-        Set<Integer> orders = repository.findAll().stream().map(ChecklistItem::getSortOrder).collect(Collectors.toSet());
-        List<ChecklistItem> missing = defaults().stream().filter(item -> !orders.contains(item.getSortOrder())).toList();
-        if (!missing.isEmpty()) {
-            repository.saveAll(missing);
-            log.info("빠진 기본 할 일 {}개를 추가했어요: {}번", missing.size(),
-                    missing.stream().map(ChecklistItem::getSortOrder).toList());
+        List<ChecklistItem> existing = repository.findAll();
+        Set<Integer> orders = existing.stream().map(ChecklistItem::getSortOrder).collect(Collectors.toSet());
+        Set<Long> ids = existing.stream().map(ChecklistItem::getId).collect(Collectors.toSet());
+        List<Integer> added = new ArrayList<>();
+        for (ChecklistItem item : defaults()) {
+            if (orders.contains(item.getSortOrder())) continue;
+            long id = item.getSortOrder();
+            if (ids.contains(id)) {
+                log.warn("할 일 {}번을 추가하지 못했어요. id {}를 다른 행이 쓰고 있어요.", item.getSortOrder(), id);
+                continue;
+            }
+            repository.insertWithId(id, item.getSortOrder(), item.getAnchor(), item.getOffsetDays(), item.getTitle(),
+                    item.getReason(), item.isImportant(), item.getLinkName(), item.getLinkUrl());
+            added.add(item.getSortOrder());
         }
-        return missing.size();
+        if (!added.isEmpty()) log.info("빠진 기본 할 일 {}개를 추가했어요: {}번", added.size(), added);
+        return added.size();
     }
 
     /** docs/02의 할 일 16개. */
