@@ -377,7 +377,7 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 | 흐름 | docs/06 S2: 주소 → 첨부 → **이 API** → 미확인 질문만 보완 → 금액 → 2번 API |
 | 개인정보 | 서류·주소는 **저장하지 않는다** (메모리 처리 후 폐기). 응답·로그에 소유자 이름을 남기지 않는다. 단 `A1_OWNER` 비교용 소유자 이름은 `evidence`로 화면에만 보여준다 (NFR-06) |
 | 엔진 | **Naver CLOVA OCR** (D9, docs/09 6절). 서류는 OCR 처리에만 전송하고 서버에 저장하지 않는다. 엔진이 바뀌어도 이 응답 모양은 같다 |
-| 시간 | 엔진 호출 타임아웃 10초. 넘으면 422 `OCR_UNREADABLE` |
+| 시간 | 엔진 호출 타임아웃 60초. 넘으면 422 `OCR_UNREADABLE` |
 
 #### Request — `multipart/form-data`
 
@@ -641,3 +641,4 @@ GET /api/schedule?contractDate=2026-11-20&balanceDate=2026-12-20&moveInDate=2026
 | v1.3 | 11/10 | D10 회원 API 확정: 6~10번(회원가입·로그인·내 정보·내 진단 기록·재평가) 추가, 에러 `UNAUTHORIZED`·`DUPLICATE_EMAIL` 추가, 2번 진단은 토큰이 있을 때만 저장하고 비회원은 `id: null`. 2번 요청·응답 필드 이름은 그대로 | 이상혁 |
 | v1.3 | 11/10 | 최다인 #21 안 반영: 경로 `/api/auth/signup`·`/api/auth/login`, 가입 필드 제한, 담당(회원가입·로그인·JWT·내 정보 문한일 / 진단 저장·기록·재평가 송석주). 기록 개수·정렬은 #21(10건·최신순)이 아니라 현재 FE(5건·오름차순, D10) 기준. 재평가(10번)는 FE에 기능(D8)이 있어 포함 | 이상혁 |
 | v1.3 | 11/10 | 6.1에 데모 계정(`demo@example.com`, 서버 시작 때 생성) 한 줄 추가. API 모양은 그대로 | 송석주 |
+| v1.3 | 11/10 | #60 CLOVA OCR 엔진 호출 타임아웃을 10초에서 60초로 변경 | 문한일 |
