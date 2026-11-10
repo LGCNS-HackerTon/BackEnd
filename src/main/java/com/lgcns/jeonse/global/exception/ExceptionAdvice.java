@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class ExceptionAdvice {
@@ -63,6 +65,13 @@ public class ExceptionAdvice {
         }
         return ResponseEntity.badRequest().body(new ApiError(
                 new ApiError.ErrorDetail("INVALID_INPUT", "서류는 파일당 10MB 이하로 올려 주세요.", field)));
+    }
+
+    // 없는 경로 (docs/03 2절 NOT_FOUND). Boot 3.2부터 없는 경로는 NoResourceFoundException으로 온다
+    @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
+    public ResponseEntity<ApiError> notFound(Exception exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiError(new ApiError.ErrorDetail(
+                "NOT_FOUND", "요청한 주소를 찾을 수 없어요. 주소를 다시 확인해 주세요.", null)));
     }
 
     @ExceptionHandler(Exception.class)
