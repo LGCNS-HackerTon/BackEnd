@@ -26,6 +26,17 @@ public class LoginMemberArgumentResolver implements HandlerMethodArgumentResolve
         return parameter.hasParameterAnnotation(LoginMember.class);
     }
 
+    /**
+     * {@code Authorization: Bearer} 토큰에서 로그인 회원 id를 꺼낸다 (docs/03 6.1).
+     * <ul>
+     *   <li>헤더가 없으면: {@code required=true}면 401, {@code required=false}면 {@code null}(비회원)</li>
+     *   <li>Bearer 형식이 아니거나, 서명이 틀리거나, 만료됐으면 401</li>
+     *   <li>토큰은 정상이어도 그 회원이 DB에 없으면(탈퇴 등) 401</li>
+     * </ul>
+     *
+     * @return 로그인 회원 id. 토큰 없는 비회원이면 {@code null}
+     * @throws ApiException 401 {@code UNAUTHORIZED}
+     */
     @Override
     public Long resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
                                 NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
