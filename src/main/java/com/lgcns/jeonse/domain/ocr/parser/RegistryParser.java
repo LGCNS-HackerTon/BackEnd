@@ -33,10 +33,13 @@ public final class RegistryParser {
     private static final Pattern MAX_AMOUNT = Pattern.compile("채권최고액금?(\\d[\\d,]{0,14})원");
     private static final Pattern OWNER = Pattern.compile("소유자\\s*([가-힣]{2,5})(?![가-힣])");
     private static final Pattern HO = Pattern.compile("(?<![\\d-])(?:제\\s*)?(\\d{1,5})\\s*호(?![가-힣])");
+    private static final Pattern LEDGER_UNIT_HO = Pattern.compile("호명칭(?:제)?(\\d{1,5})호");
+    private static final Pattern LEDGER_UNIT_DONG = Pattern.compile("동명칭(?:제)?(\\d{1,4})동");
     private static final Pattern DONG = Pattern.compile("(?<![\\d가-힣])(?:제\\s*)?(\\d{1,4})\\s*동(?![가-힣])");
     private static final Pattern UNIT_HO = Pattern.compile("제(\\d{1,3})층제(\\d{1,5})호");
     private static final Pattern ROAD = Pattern.compile("(?<!\\S)(\\S*?(?:로|길))\\s*(\\d{1,5}(?:-\\d{1,5})?)(?![\\d동호층길번])");
-    private static final Pattern LOT = Pattern.compile("(?<!\\S)([가-힣][가-힣\\d]*(?:동|리|가))\\s*(\\d{1,5}(?:-\\d{1,5})?)(?![\\d동호층번])");
+    // 건축물대장 표에서는 동 이름과 숫자 사이에 열 제목 '지번'이 끼어 있다.
+    private static final Pattern LOT = Pattern.compile("(?<!\\S)([가-힣][가-힣\\d]*(?:동|리|가))\\s*(?:지번\\s*)?(\\d{1,5}(?:-\\d{1,5})?)(?![\\d동호층번])");
     private static final Map<HousingType, Pattern> USAGE = new LinkedHashMap<>();
 
     static {
@@ -72,22 +75,36 @@ public final class RegistryParser {
         AddressMatch addressMatch = compareAddress(input, title);
 
         String ledger = null;
-        Set<String> ledgerHos = ledgerText == null ? Set.of() : hos(ledgerText);
+        boolean ledgerMismatch = false;
+        boolean ledgerUnverified = false;
+        Set<String> ledgerHos = ledgerText == null ? Set.of() : ledgerUnitHos(ledgerText);
+        Set<String> ledgerDongs = ledgerText == null ? Set.of() : ledgerUnitDongs(ledgerText);
+        Boolean ledgerBaseMatch = ledgerText == null ? null : sameBase(input.text, ledgerText);
         if (ledgerText == null || !compact(ledgerText).contains("건축물대장")) {
             warnings.add(MISSING_LEDGER);
-        } else if (Boolean.FALSE.equals(sameBase(input.text, ledgerText))
-                || (input.ho != null && !ledgerHos.isEmpty() && !ledgerHos.contains(input.ho))) {
-            warnings.add("건축물대장의 주소·호수가 입력한 주소와 달라요. 용도·위반건축물 질문은 직접 답해 주세요.");
+        } else if (Boolean.FALSE.equals(ledgerBaseMatch)
+                || (input.ho != null && !ledgerHos.isEmpty() && !ledgerHos.contains(input.ho))
+                || (input.dong != null && !ledgerDongs.isEmpty() && !ledgerDongs.contains(input.dong))) {
+            ledgerMismatch = true;
+            warnings.add("건축물대장의 주소·동·호수가 입력한 주소와 달라요. 용도·위반건축물 질문은 직접 답해 주세요.");
+        } else if (!Boolean.TRUE.equals(ledgerBaseMatch)
+                || (input.ho != null && ledgerHos.size() != 1)
+                || (input.ho == null && compact(ledgerText).contains("집합건축물대장"))
+                || (input.dong != null && ledgerDongs.size() != 1)
+                || (input.dong == null && !ledgerDongs.isEmpty())) {
+            ledgerUnverified = true;
+            warnings.add("건축물대장의 주소·동·호수를 확인하지 못했어요. 용도·위반건축물 질문은 직접 답해 주세요.");
         } else {
             ledger = compact(ledgerText);
         }
-        Map<HousingType, String> ledgerUsage = ledger == null ? Map.of() : usage(ledger);
+        Map<HousingType, String> ledgerUsage = ledger == null ? Map.of() : currentLedgerUsage(ledger);
         HousingType housingType = ledgerUsage.size() == 1 ? ledgerUsage.keySet().iterator().next() : null;
 
         Mortgage mortgage = mortgage(eulgu);
         List<Answer> answers = List.of(
                 address(addressMatch),
-                usage(ledgerUsage, usage(String.join("", title.stream().map(Line::compact).toList()))),
+                ledgerMismatch || ledgerUnverified ? unconfirmed("T2_USAGE", "건축물대장 주소·동·호수를 확인해 주세요")
+                        : usage(ledgerUsage, usage(String.join("", title.stream().map(Line::compact).toList()))),
                 owner(gapgu),
                 recentOwner(gapgu, today),
                 keyword("A3_TRUST", gapgu, "신탁", List.of("신탁")),
@@ -144,11 +161,29 @@ public final class RegistryParser {
         return set;
     }
 
-    private static Set<String> hos(String text) {
+    /** 변동사항 등의 다른 호수는 제외하고 대장 호명칭에서 대상 호수를 찾는다. */
+    private static Set<String> ledgerUnitHos(String text) {
         Set<String> set = new HashSet<>();
-        Matcher m = HO.matcher(text);
+        Matcher m = LEDGER_UNIT_HO.matcher(ledgerHeader(text));
         while (m.find()) set.add(m.group(1));
         return set;
+    }
+
+    /** 대장 머리글의 동명칭만 읽어 변동사항의 다른 동을 대상에서 제외한다. */
+    private static Set<String> ledgerUnitDongs(String text) {
+        Set<String> set = new HashSet<>();
+        Matcher m = LEDGER_UNIT_DONG.matcher(ledgerHeader(text));
+        while (m.find()) set.add(m.group(1));
+        return set;
+    }
+
+    private static String ledgerHeader(String text) {
+        String header = compact(text);
+        for (String marker : List.of("전유부분", "변동사항")) {
+            int at = header.indexOf(marker);
+            if (at >= 0) header = header.substring(0, at);
+        }
+        return header;
     }
 
     private static boolean differs(String a, String b) {
@@ -165,16 +200,31 @@ public final class RegistryParser {
 
     // ---- 용도 (건축물대장 우선, 없으면 표제부) ----
 
+    /** 집합건축물대장은 전유부분의 현재 용도만 읽고, 일반대장은 기존 주용도 판정을 사용한다. */
+    private static Map<HousingType, String> currentLedgerUsage(String ledger) {
+        int start = ledger.indexOf("전유부분");
+        if (start < 0) return ledger.contains("집합건축물대장") ? Map.of() : usage(ledger);
+        int end = ledger.length();
+        for (String marker : List.of("공용부분", "변동사항")) {
+            int at = ledger.indexOf(marker, start + "전유부분".length());
+            if (at >= 0 && at < end) end = at;
+        }
+        return usage(ledger.substring(start, end));
+    }
+
+    /** 가격표의 아파트 문구를 제외하고 주거·비주거 용도 표현을 찾는다. */
     private static Map<HousingType, String> usage(String compactText) {
+        // 가격표의 '공동주택(아파트)가격'은 해당 호실의 건물 용도가 아니다.
+        String usageText = compactText.replaceAll("공동주택\\(?아파트\\)?가격", "");
         Map<HousingType, String> found = new EnumMap<>(HousingType.class);
         USAGE.forEach((type, p) -> {
-            Matcher m = p.matcher(compactText);
+            Matcher m = p.matcher(usageText);
             if (m.find()) found.put(type, m.group());
         });
         if (found.containsKey(HousingType.MULTI_HOUSEHOLD)) found.remove(HousingType.DETACHED); // 다가구주택은 단독주택(다가구주택)으로 적힌다
-        if (!found.containsKey(HousingType.OFFICETEL) && compactText.contains("업무시설")) found.putIfAbsent(HousingType.NON_RESIDENTIAL, "업무시설");
+        if (!found.containsKey(HousingType.OFFICETEL) && usageText.contains("업무시설")) found.putIfAbsent(HousingType.NON_RESIDENTIAL, "업무시설");
         if (found.size() > 1) { // 층별 용도가 섞여 있으면 주용도만 본다
-            Matcher m = Pattern.compile("주용도([가-힣()·,]{0,20})").matcher(compactText);
+            Matcher m = Pattern.compile("주용도([가-힣()·,]{0,20})").matcher(usageText);
             if (m.find()) {
                 Map<HousingType, String> main = usage(m.group(1));
                 if (main.size() == 1) return main;

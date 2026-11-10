@@ -28,7 +28,10 @@ PR마다 CI가 `./gradlew build`(테스트 포함)를 실행합니다. CI는 MyS
 | `CLOVA_OCR_URL`, `CLOVA_OCR_SECRET` | | Naver CLOVA OCR 호출 정보. 없으면 OCR API는 422 `OCR_UNREADABLE`로 실패하고 화면은 직접 답하기로 진행합니다 |
 | `JWT_SECRET` | | 회원 인증 JWT 서명 키 (32바이트 이상). 없으면 시작 때 임시 키를 만들고 경고 로그를 남깁니다 (재시작하면 로그인이 풀림) |
 
-실제 값은 `.env`에만 두고 커밋하지 않습니다.
+로컬 실행 시 `.env.example`을 복사해 저장소 루트의 `.env`에 실제 값을 입력하세요. Spring Boot가 이 파일을 Java properties 형식으로 읽으므로 값에 따옴표를 붙이지 마세요. 한글 등 비 ASCII 문자가 든 값은 유니코드 이스케이프(`\uXXXX`)로 적거나 프로세스 환경 변수로 설정하세요. `.env`는 Git에서 제외됩니다. 실제 값은 커밋하지 않습니다.
+MySQL을 실행하지 않는다면 `.env`의 `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` 줄을 주석 처리하거나 지우면 기본 H2 메모리 DB로 실행됩니다. `.env.example`의 MySQL 예시 값을 그대로 두면 MySQL 연결을 시도합니다.
+
+CLOVA OCR은 콘솔에서 **General 도메인 생성 → Secret Key 생성 → API Gateway 자동 연동** 순서로 준비합니다. `CLOVA_OCR_URL`에는 **APIGW Invoke URL**(HTTPS)을, `CLOVA_OCR_SECRET`에는 해당 도메인의 Secret Key를 넣습니다. 도메인 ID나 OCR 내부 Invoke URL을 대신 넣지 않습니다. 설정 후 서버를 다시 시작하세요. PDF에서 공백을 제외한 텍스트가 20자 이상 추출되면 로컬에서 읽고, 그 외 PDF와 JPG·PNG 이미지는 CLOVA로 보냅니다. 자세한 설정은 [CLOVA OCR 도메인 가이드](https://guide.ncloud-docs.com/docs/clovaocr-domain)를 참고하세요.
 
 ## API
 
