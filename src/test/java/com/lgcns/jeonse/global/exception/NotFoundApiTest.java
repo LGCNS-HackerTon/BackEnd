@@ -1,5 +1,6 @@
 package com.lgcns.jeonse.global.exception;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -35,6 +36,6 @@ class NotFoundApiTest {
         result.andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error.code").value("NOT_FOUND"))
                 .andExpect(jsonPath("$.error.message").value("요청한 주소를 찾을 수 없어요. 주소를 다시 확인해 주세요."))
-                .andExpect(jsonPath("$.error.field").isEmpty());
+                .andExpect(jsonPath("$.error.field").value(nullValue()));
     }
 }
