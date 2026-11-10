@@ -1,4 +1,6 @@
 # 전세역전 백엔드
+<img width="1365" height="761" alt="image" src="https://github.com/user-attachments/assets/ffdda511-c1e6-4aaa-a06b-586e19b78d55" />
+
 
 팀 공감 · Spring Boot 3 (Java 17) · Spring Data JPA · MySQL 8 (로컬 기본은 H2)
 
