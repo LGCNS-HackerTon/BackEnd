@@ -37,28 +37,46 @@ public class Diagnosis {
     // 시각은 앱이 정한다 (docs/04): 저장 때 created_at = updated_at, 재평가 때만 updated_at이 바뀐다
     @Column(name = "created_at", nullable = false, updatable = false) private LocalDateTime createdAt;
     @Column(name = "updated_at", nullable = false) private LocalDateTime updatedAt;
+    @Column(name = "reevaluated_at") private LocalDateTime reevaluatedAt;
 
     public Diagnosis(Long userId, String propertyName, int deposit, int salePrice, int mortgageMax, int seniorDeposit,
                      boolean seniorUnknown, BigDecimal debtRatio, int riskScore, RiskGrade riskGrade,
                      String aiExplanation, boolean aiUsed) {
         this.userId = userId;
-        overwrite(propertyName, deposit, salePrice, mortgageMax, seniorDeposit, seniorUnknown, debtRatio, riskScore,
+        applyResult(propertyName, deposit, salePrice, mortgageMax, seniorDeposit, seniorUnknown, debtRatio, riskScore,
                 riskGrade, aiExplanation, aiUsed);
-        this.createdAt = this.updatedAt;
+        this.createdAt = LocalDateTime.now().withNano(0);
+        this.updatedAt = this.createdAt;
     }
 
     // 재평가(docs/03 10번): 같은 행에 새 결과를 덮어쓴다. id·userId·createdAt은 그대로
     public void overwrite(String propertyName, int deposit, int salePrice, int mortgageMax, int seniorDeposit,
                           boolean seniorUnknown, BigDecimal debtRatio, int riskScore, RiskGrade riskGrade,
                           String aiExplanation, boolean aiUsed) {
+        applyResult(propertyName, deposit, salePrice, mortgageMax, seniorDeposit, seniorUnknown, debtRatio, riskScore,
+                riskGrade, aiExplanation, aiUsed);
+        this.updatedAt = LocalDateTime.now().withNano(0);
+        this.reevaluatedAt = this.updatedAt;
+    }
+
+    private void applyResult(String propertyName, int deposit, int salePrice, int mortgageMax, int seniorDeposit,
+                             boolean seniorUnknown, BigDecimal debtRatio, int riskScore, RiskGrade riskGrade,
+                             String aiExplanation, boolean aiUsed) {
         this.propertyName = propertyName; this.deposit = deposit; this.salePrice = salePrice;
         this.mortgageMax = mortgageMax; this.seniorDeposit = seniorDeposit; this.seniorUnknown = seniorUnknown;
         this.debtRatio = debtRatio; this.riskScore = riskScore; this.riskGrade = riskGrade;
         this.aiExplanation = aiExplanation; this.aiUsed = aiUsed;
-        this.updatedAt = LocalDateTime.now().withNano(0); // MySQL DATETIME은 초 단위라 맞춰 둔다
     }
 
-    // 재평가한 적 없으면 null (docs/03 9번).
-    // shortcut: 저장과 같은 초에 재평가하면 null로 보인다. 정확히 구분해야 하면 재평가 여부 컬럼을 추가
-    public LocalDateTime getReevaluatedAt() { return updatedAt.equals(createdAt) ? null : updatedAt; }
+    /**
+     * 마지막 재평가 시각을 반환한다. 별도 재평가 시각이 없는 기존 기록은
+     * 수정 시각이 생성 시각과 다를 때 기존 수정 시각을 사용한다.
+     *
+     * @return 마지막 재평가 시각. 확인할 수 있는 재평가 기록이 없으면 null
+     */
+    public LocalDateTime getReevaluatedAt() {
+        if (reevaluatedAt != null) return reevaluatedAt;
+        // 새 컬럼이 비어 있는 기존 기록은 이전에 확인할 수 있었던 재평가 시각을 유지한다.
+        return updatedAt.equals(createdAt) ? null : updatedAt;
+    }
 }
