@@ -34,6 +34,7 @@ public final class RegistryParser {
     private static final Pattern OWNER = Pattern.compile("소유자\\s*([가-힣]{2,5})(?![가-힣])");
     private static final Pattern HO = Pattern.compile("(?<![\\d-])(?:제\\s*)?(\\d{1,5})\\s*호(?![가-힣])");
     private static final Pattern LEDGER_UNIT_HO = Pattern.compile("호명칭(?:제)?(\\d{1,5})호");
+    private static final Pattern LEDGER_UNIT_DONG = Pattern.compile("동명칭(?:제)?(\\d{1,4})동");
     private static final Pattern DONG = Pattern.compile("(?<![\\d가-힣])(?:제\\s*)?(\\d{1,4})\\s*동(?![가-힣])");
     private static final Pattern UNIT_HO = Pattern.compile("제(\\d{1,3})층제(\\d{1,5})호");
     private static final Pattern ROAD = Pattern.compile("(?<!\\S)(\\S*?(?:로|길))\\s*(\\d{1,5}(?:-\\d{1,5})?)(?![\\d동호층길번])");
@@ -77,18 +78,22 @@ public final class RegistryParser {
         boolean ledgerMismatch = false;
         boolean ledgerUnverified = false;
         Set<String> ledgerHos = ledgerText == null ? Set.of() : ledgerUnitHos(ledgerText);
+        Set<String> ledgerDongs = ledgerText == null ? Set.of() : ledgerUnitDongs(ledgerText);
         Boolean ledgerBaseMatch = ledgerText == null ? null : sameBase(input.text, ledgerText);
         if (ledgerText == null || !compact(ledgerText).contains("건축물대장")) {
             warnings.add(MISSING_LEDGER);
         } else if (Boolean.FALSE.equals(ledgerBaseMatch)
-                || (input.ho != null && !ledgerHos.isEmpty() && !ledgerHos.contains(input.ho))) {
+                || (input.ho != null && !ledgerHos.isEmpty() && !ledgerHos.contains(input.ho))
+                || (input.dong != null && !ledgerDongs.isEmpty() && !ledgerDongs.contains(input.dong))) {
             ledgerMismatch = true;
-            warnings.add("건축물대장의 주소·호수가 입력한 주소와 달라요. 용도·위반건축물 질문은 직접 답해 주세요.");
+            warnings.add("건축물대장의 주소·동·호수가 입력한 주소와 달라요. 용도·위반건축물 질문은 직접 답해 주세요.");
         } else if (!Boolean.TRUE.equals(ledgerBaseMatch)
                 || (input.ho != null && ledgerHos.size() != 1)
-                || (input.ho == null && compact(ledgerText).contains("집합건축물대장"))) {
+                || (input.ho == null && compact(ledgerText).contains("집합건축물대장"))
+                || (input.dong != null && ledgerDongs.size() != 1)
+                || (input.dong == null && !ledgerDongs.isEmpty())) {
             ledgerUnverified = true;
-            warnings.add("건축물대장의 주소·호수를 확인하지 못했어요. 용도·위반건축물 질문은 직접 답해 주세요.");
+            warnings.add("건축물대장의 주소·동·호수를 확인하지 못했어요. 용도·위반건축물 질문은 직접 답해 주세요.");
         } else {
             ledger = compact(ledgerText);
         }
@@ -98,7 +103,7 @@ public final class RegistryParser {
         Mortgage mortgage = mortgage(eulgu);
         List<Answer> answers = List.of(
                 address(addressMatch),
-                ledgerMismatch || ledgerUnverified ? unconfirmed("T2_USAGE", "건축물대장 주소·호수를 확인해 주세요")
+                ledgerMismatch || ledgerUnverified ? unconfirmed("T2_USAGE", "건축물대장 주소·동·호수를 확인해 주세요")
                         : usage(ledgerUsage, usage(String.join("", title.stream().map(Line::compact).toList()))),
                 owner(gapgu),
                 recentOwner(gapgu, today),
@@ -159,14 +164,26 @@ public final class RegistryParser {
     /** 변동사항 등의 다른 호수는 제외하고 대장 호명칭에서 대상 호수를 찾는다. */
     private static Set<String> ledgerUnitHos(String text) {
         Set<String> set = new HashSet<>();
+        Matcher m = LEDGER_UNIT_HO.matcher(ledgerHeader(text));
+        while (m.find()) set.add(m.group(1));
+        return set;
+    }
+
+    /** 대장 머리글의 동명칭만 읽어 변동사항의 다른 동을 대상에서 제외한다. */
+    private static Set<String> ledgerUnitDongs(String text) {
+        Set<String> set = new HashSet<>();
+        Matcher m = LEDGER_UNIT_DONG.matcher(ledgerHeader(text));
+        while (m.find()) set.add(m.group(1));
+        return set;
+    }
+
+    private static String ledgerHeader(String text) {
         String header = compact(text);
         for (String marker : List.of("전유부분", "변동사항")) {
             int at = header.indexOf(marker);
             if (at >= 0) header = header.substring(0, at);
         }
-        Matcher m = LEDGER_UNIT_HO.matcher(header);
-        while (m.find()) set.add(m.group(1));
-        return set;
+        return header;
     }
 
     private static boolean differs(String a, String b) {
