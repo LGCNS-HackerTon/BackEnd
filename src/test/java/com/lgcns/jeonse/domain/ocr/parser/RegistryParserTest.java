@@ -82,7 +82,8 @@ public class RegistryParserTest {
 
     @Test
     void 말소_기록이_없으면_가압류는_유효하다() {
-        String text = fixture("registry-case-a-cancelled.txt").replace("4 3번가압류등기말소 2021년6월1일 제404호 2021년5월30일 해제\n", "");
+        String text = fixture("registry-case-a-cancelled.txt")
+                .replaceAll("(?m)^4 3번가압류등기말소[^\\r\\n]*(?:\\r?\\n)?", "");
         OcrResponseDTO r = RegistryParser.parse("서울 가상구 샘플로 7, 103동 702호", text, fixture("ledger-case-a.txt"), TODAY);
 
         assertAnswer(r, "A4_SEIZURE", Status.CONFIRMED, "YES");
@@ -186,6 +187,7 @@ public class RegistryParserTest {
         OcrResponseDTO r = RegistryParser.parse("서울 가상구 테스트로 12, 101동 1204호", fixture("registry-case-b.txt"), ledger, TODAY);
 
         assertAnswer(r, "R1_VIOLATION", Status.UNCONFIRMED, null);
+        assertAnswer(r, "T2_USAGE", Status.UNCONFIRMED, null);
         assertThat(r.housingType()).isNull();
     }
 
@@ -195,8 +197,53 @@ public class RegistryParserTest {
         OcrResponseDTO r = RegistryParser.parse("서울 가상구 테스트로 12, 101동 1204호", fixture("registry-case-b.txt"), ledger, TODAY);
 
         assertAnswer(r, "R1_VIOLATION", Status.UNCONFIRMED, null);
+        assertAnswer(r, "T2_USAGE", Status.UNCONFIRMED, null);
         assertThat(r.housingType()).isNull();
         assertThat(r.warnings()).contains("건축물대장의 주소·호수가 입력한 주소와 달라요. 용도·위반건축물 질문은 직접 답해 주세요.");
+    }
+
+    @Test
+    void 건축물대장의_주소나_호수를_확인하지_못하면_판정을_보류한다() {
+        String ledger = "집합건축물대장(전유부, 갑)\n주용도 아파트\n위반건축물";
+        OcrResponseDTO r = RegistryParser.parse("서울 가상구 테스트로 12, 101동 1204호",
+                fixture("registry-case-b.txt"), ledger, TODAY);
+
+        assertAnswer(r, "T2_USAGE", Status.UNCONFIRMED, null);
+        assertAnswer(r, "R1_VIOLATION", Status.UNCONFIRMED, null);
+        assertThat(r.housingType()).isNull();
+        assertThat(r.warnings()).contains("건축물대장의 주소·호수를 확인하지 못했어요. 용도·위반건축물 질문은 직접 답해 주세요.");
+    }
+
+    @Test
+    void 건축물대장_지번_열과_가격표_아파트를_용도로_오인하지_않는다() {
+        String ledger = "집합건축물대장(전유부, 갑)\n호명칭 1204호\n"
+                + "대지위치 서울 가상구 테스트동 지번 123\n"
+                + "전유부분 용도 제2종근린생활시설\n"
+                + "공동주택(아파트)가격 해당사항 없음\n위반건축물";
+        OcrResponseDTO r = RegistryParser.parse("서울 가상구 테스트동 123 가나빌라 101동 1204호",
+                fixture("registry-case-b.txt"), ledger, TODAY);
+
+        assertThat(r.addressMatch()).isEqualTo(AddressMatch.MATCH);
+        assertAnswer(r, "T2_USAGE", Status.CONFIRMED, "NO");
+        assertAnswer(r, "R1_VIOLATION", Status.CONFIRMED, "YES");
+        assertThat(r.housingType()).isEqualTo(HousingType.NON_RESIDENTIAL);
+        assertThat(r.warnings()).isEmpty();
+    }
+
+    @Test
+    void 전유부분의_현재_용도만_보고_변동사항의_무단_용도변경은_제외한다() {
+        String ledger = "집합건축물대장(전유부, 갑)\n호명칭 1204호\n"
+                + "대지위치 서울 가상구 테스트동 지번 123\n"
+                + "전유부분 구분 층별 용도 주 12층 제2종근린생활시설(사무소)\n"
+                + "공용부분 계단실\n변동사항 위반건축물 표시: 무단 용도변경 "
+                + "(제2종근린생활시설(사무소) → 단독주택(주거용) 사용)\n"
+                + "공동주택(아파트)가격 해당사항 없음";
+        OcrResponseDTO r = RegistryParser.parse("서울 가상구 테스트동 123 가나빌라 101동 1204호",
+                fixture("registry-case-b.txt"), ledger, TODAY);
+
+        assertAnswer(r, "T2_USAGE", Status.CONFIRMED, "NO");
+        assertAnswer(r, "R1_VIOLATION", Status.CONFIRMED, "YES");
+        assertThat(r.housingType()).isEqualTo(HousingType.NON_RESIDENTIAL);
     }
 
     @Test
