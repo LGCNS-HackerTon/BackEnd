@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -21,6 +22,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 @RestControllerAdvice
 public class ExceptionAdvice {
     private static final Logger log = LoggerFactory.getLogger(ExceptionAdvice.class);
+    private static final String UNREADABLE_BODY = "입력 형식이 올바르지 않아요. 다시 확인해 주세요.";
 
     @ExceptionHandler(InvalidInputException.class)
     public ResponseEntity<ApiError> invalidInput(InvalidInputException exception) {
@@ -47,7 +49,17 @@ public class ExceptionAdvice {
         String field = exception.getCause() instanceof MismatchedInputException mismatch && !mismatch.getPath().isEmpty()
                 ? mismatch.getPath().get(0).getFieldName() : null;
         return ResponseEntity.badRequest().body(new ApiError(new ApiError.ErrorDetail(
-                "INVALID_INPUT", "입력 형식이 올바르지 않아요. 다시 확인해 주세요.", field)));
+                "INVALID_INPUT", UNREADABLE_BODY, field)));
+    }
+
+    /**
+     * JSON 본문을 받는 API(2·6·7·10번)에 {@code Content-Type}이 없거나 JSON이 아니면 JSON 형식 오류와 같게 처리한다.
+     * 명세에 415 코드가 없으므로 400 {@code INVALID_INPUT}, {@code field: null}로 응답한다 (docs/03 2장).
+     */
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ApiError> unsupportedContentType(HttpMediaTypeNotSupportedException exception) {
+        return ResponseEntity.badRequest().body(new ApiError(new ApiError.ErrorDetail(
+                "INVALID_INPUT", UNREADABLE_BODY, null)));
     }
 
     @ExceptionHandler(ApiException.class)
