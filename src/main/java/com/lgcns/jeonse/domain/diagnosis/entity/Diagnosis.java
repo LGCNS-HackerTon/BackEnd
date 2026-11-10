@@ -68,6 +68,12 @@ public class Diagnosis {
         this.aiExplanation = aiExplanation; this.aiUsed = aiUsed;
     }
 
+    /**
+     * 마지막 재평가 시각을 반환한다. 별도 재평가 시각이 없는 기존 기록은
+     * 수정 시각이 생성 시각과 다를 때 기존 수정 시각을 사용한다.
+     *
+     * @return 마지막 재평가 시각. 확인할 수 있는 재평가 기록이 없으면 null
+     */
     public LocalDateTime getReevaluatedAt() {
         if (reevaluatedAt != null) return reevaluatedAt;
         // 새 컬럼이 비어 있는 기존 기록은 이전에 확인할 수 있었던 재평가 시각을 유지한다.
